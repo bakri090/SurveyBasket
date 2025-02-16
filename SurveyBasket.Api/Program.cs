@@ -9,6 +9,9 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// Services
+builder.Services.AddScoped<IPollService,PollsService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
