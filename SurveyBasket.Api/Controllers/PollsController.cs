@@ -1,4 +1,5 @@
-﻿using SurveyBasket.Api.Service;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using SurveyBasket.Api.Contracts.Validation;
 
 namespace SurveyBasket.Api.Controllers;
 
@@ -6,37 +7,51 @@ namespace SurveyBasket.Api.Controllers;
 [ApiController]
 public class PollsController(IPollService poll) : ControllerBase
 {
-	private readonly IPollService _poll = poll;
+	private readonly IPollService _pollService = poll;
 
 	[HttpGet]
     public IActionResult Get()
-    {
-        return Ok(_poll.GetAll());    
+	{
+        var polls = _pollService.GetAll();
+
+        var responses = polls.Adapt<IEnumerable<PollResponse>>();
+		
+        return Ok(responses);    
     }
+
     [HttpGet("{id}")]
-    public IActionResult GetById(int id)
+    public IActionResult Get([FromRoute]int id)
     {
-        var poll = _poll.Get(id);
-        return poll is null ? NotFound() : Ok(poll);
+        var poll = _pollService.Get(id);
+        
+        if (poll == null)
+            return NotFound();
+
+        var response = poll.Adapt<PollResponse>();
+        return poll is null ? NotFound() : Ok(response);
     }
+
     [HttpPost("")]
-    public IActionResult Add(Poll poll)
+    public IActionResult Add([FromBody]CreatePollRequest request)
     {
-        var newPoll = _poll.Add(poll);
-        return CreatedAtAction(nameof(Add),new { id=poll.Id }, newPoll);
+        
+        var newPoll = _pollService.Add(request.Adapt<Poll>());
+        return CreatedAtAction(nameof(Add), new { id = newPoll.Id }, newPoll);
     }
+
     [HttpPut("{id}")]
-    public IActionResult Update(int id, Poll poll)
+    public IActionResult Update([FromRoute]int id,[FromBody]CreatePollRequest poll)
     {
-        var isUpdtaed = _poll.Update(id,poll);
-        if(!isUpdtaed)
+        var isUpdated = _pollService.Update(id, poll.Adapt<Poll>());
+        if (!isUpdated)
             return NotFound();
         return NoContent();
     }
+
     [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
+    public IActionResult Delete([FromRoute]int id)
     {
-        var isDeleted = _poll.Delete(id);
+        var isDeleted = _pollService.Delete(id);
         if(!isDeleted)
             return NotFound();
         return NoContent();

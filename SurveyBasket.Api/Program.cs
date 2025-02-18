@@ -1,24 +1,18 @@
-using Scalar.AspNetCore;
 using SurveyBasket.Api.Middleware;
+using SurveyBasket.Api;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-// Services
-builder.Services.AddScoped<IPollService,PollsService>();
+builder.Services.AddDependencies();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.MapScalarApiReference();
+	app.UseSwagger();
+	app.UseSwaggerUI();
+  //  app.MapOpenApi();
+//    app.MapScalarApiReference();
 }
 app.UseCustomMiddleware();
 
