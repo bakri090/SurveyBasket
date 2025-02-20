@@ -13,6 +13,8 @@
 
 		public async Task InvokeAsync(HttpContext context)
 		{
+			var endPoint = context.GetEndpoint();
+			Console.WriteLine($"Endpoint: {endPoint}");
 			_logger.LogInformation("Processing request");
 			await _next(context);
 			_logger.LogError("Processing response");

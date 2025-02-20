@@ -1,47 +1,68 @@
 ﻿
+using Microsoft.EntityFrameworkCore;
+
 namespace SurveyBasket.Api.Service
 {
-    public class PollsService : IPollService
+    public class PollsService(ApplicationDbContext db) : IPollService
     {
-        private static readonly List<Poll> _polls = [
-     new Poll{
-            Id = 1,
-            Title = "First Title",
-            Description = "This is first description"
-        }
-     ];
-        public IEnumerable<Poll> GetAll() => _polls;
+        private readonly ApplicationDbContext _db = db;
+       
+        public async Task<IEnumerable<Poll>> GetAllAsync(CancellationToken cancellationToken = default) =>
+			await _db.Polls.AsNoTracking().ToListAsync(cancellationToken);
         
-        public Poll? Get(int id)=> _polls.FirstOrDefault(x => x.Id == id);
+        public async Task<Poll?> GetAsync(int id,CancellationToken cancellationToken = default) => 
+			await _db.Polls.FindAsync(id,cancellationToken);
 
-        public Poll Add(Poll poll)
-        {
-           poll.Id = _polls.Count + 1;
-            _polls.Add(poll);
-            return poll;
-        }
-
-		public bool Update(int id, Poll poll)
+		public async Task<Poll> AddAsync(Poll poll,CancellationToken cancellationToken =default)
 		{
-            var currentPoll = Get(id);
-            if (currentPoll is null)
-            {
-                return false;
-            }
-            currentPoll.Title = poll.Title;
-            currentPoll.Description = poll.Description;
-            return true;
+			await _db.Polls.AddAsync(poll,cancellationToken);
+			await _db.SaveChangesAsync(cancellationToken);
+			return poll;
 		}
 
-		public bool Delete(int id)
+		public async Task<bool> UpdateAsync(int id, Poll poll,CancellationToken cancellationToken = default)
 		{
-            var currentPoll = Get(id);
-            if (currentPoll is null)
-            {
-                return false;
-            }
-            _polls.Remove(currentPoll);
-            return true;
+			var currentPoll = await GetAsync(id, cancellationToken);
+			if (currentPoll is null)
+			{
+				return false;
+			}
+
+			currentPoll.Title = poll.Title;
+			currentPoll.Summary = poll.Summary;
+			currentPoll.StartsAt = poll.StartsAt;
+			currentPoll.EndsAt = poll.EndsAt;
+
+			await _db.SaveChangesAsync(cancellationToken);
+			return true;
 		}
+
+		public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+		{
+			var poll = await GetAsync(id, cancellationToken); 
+			
+			if (poll is null)
+				return false; 
+
+			_db.Remove(poll);
+			
+			await _db.SaveChangesAsync(cancellationToken);
+
+			return true;
+		}
+		public async Task<bool> TogglePublishStatusAsync(int id, CancellationToken cancellationToken = default)
+		{
+			var poll = await GetAsync(id, cancellationToken);
+
+			if (poll is null)
+				return false;
+
+			poll.IsPublished = !poll.IsPublished;
+
+			await _db.SaveChangesAsync(cancellationToken);
+
+			return true;
+		}
+
 	}
-}
+	}

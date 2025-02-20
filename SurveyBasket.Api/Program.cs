@@ -1,8 +1,11 @@
 using SurveyBasket.Api.Middleware;
 using SurveyBasket.Api;
+using SurveyBasket.Api.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDependencies();
+
+builder.Services.AddDependencies(builder.Configuration);
 
 var app = builder.Build();
 
