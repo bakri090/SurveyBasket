@@ -1,4 +1,4 @@
-﻿namespace SurveyBasket.Api.Contracts.Validation;
+﻿namespace SurveyBasket.Api.Contracts.Polls;
 
 public class PollRequestValidator : AbstractValidator<PollRequest>
 {
@@ -15,7 +15,7 @@ public class PollRequestValidator : AbstractValidator<PollRequest>
 		RuleFor(x => x.StartsAt)
 			.NotEmpty()
 			.GreaterThanOrEqualTo(x => DateOnly.FromDateTime(DateTime.Today));
-		
+
 		RuleFor(x => x.EndsAt).NotEmpty();
 
 		RuleFor(x => x)

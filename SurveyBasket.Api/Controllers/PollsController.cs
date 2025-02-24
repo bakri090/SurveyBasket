@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
-using SurveyBasket.Api.Contracts.Validation;
+﻿using Microsoft.AspNetCore.Authorization;
+using SurveyBasket.Api.Contracts.Polls;
 
 namespace SurveyBasket.Api.Controllers;
 
@@ -10,6 +10,7 @@ public class PollsController(IPollService poll) : ControllerBase
 	private readonly IPollService _pollService = poll;
 
 	[HttpGet]
+    [Authorize]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
 	{
         var polls =  await _pollService.GetAllAsync(cancellationToken);

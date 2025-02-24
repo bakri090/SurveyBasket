@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SurveyBasket.Api.Service
 {
-    public class PollsService(ApplicationDbContext db) : IPollService
+    public class PollService(ApplicationDbContext db) : IPollService
     {
         private readonly ApplicationDbContext _db = db;
        

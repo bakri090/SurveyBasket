@@ -1,11 +1,6 @@
-@SurveyBasket.Api_HostAddress = https://localhost:7188
+@SurveyBasket.Api_HostAddress = http://localhost:5042
 
-GET {{SurveyBasket.Api_HostAddress}}/api/polls/
+GET {{SurveyBasket.Api_HostAddress}}/weatherforecast/
 Accept: application/json
-
-###
-
-@id=1
-GET {{SurveyBasket.Api_HostAddress}}/api/polls/{{id}}
 
 ###
