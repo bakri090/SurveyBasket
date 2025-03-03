@@ -19,9 +19,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("WithOrigin");
 
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.UseExceptionHandler();
 app.Run();

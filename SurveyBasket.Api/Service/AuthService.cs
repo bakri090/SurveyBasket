@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using SurveyBasket.Api.Authentication;
+using SurveyBasket.Api.Errors;
 using System.Security.Cryptography;
 
 namespace SurveyBasket.Api.Service;
@@ -12,21 +13,23 @@ public class AuthService(UserManager<ApplicationUser> userManager,IJwtProvider j
 
 	private readonly int _refreshTokenExpiryDays = 14;
 
-	public async Task<AuthResponse?> GetRefreshTokenAsync(string token, string refreshToken, 
+	public async Task<Result<AuthResponse>> GetRefreshTokenAsync(string token, string refreshToken, 
 		 CancellationToken cancellationToken = default)
 	{
 		var userId = _jwtProvider.ValidateToken(token);
 		if (userId == null)
-			return null;
+			return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
 
 		var user = await _userManager.FindByIdAsync(userId);
 
 		if (user == null)
-			return null;
+			return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
+			
 		
 		var userRefreshToken = user.RefreshTokens.SingleOrDefault(x => x.Token == refreshToken && x.IsActive);
 		if (userRefreshToken == null)
-			return null;
+			return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
+			
 		userRefreshToken.RevokedOn = DateTime.UtcNow;
 
 		var (newToken , expiresIn) = _jwtProvider.GenerateToken(user);
@@ -40,22 +43,22 @@ public class AuthService(UserManager<ApplicationUser> userManager,IJwtProvider j
 			ExpiresOn = refreshTokenExpiration,
 		});
 		await _userManager.UpdateAsync(user);
-
-		return new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, newToken, expiresIn, newRefreshToken, refreshTokenExpiration);
+		var authResponse = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, newToken, expiresIn, newRefreshToken, refreshTokenExpiration);
+		return Result.Success(authResponse);
 	}
 
-	public async Task<AuthResponse?> GetTokenAsync(string email, string password,
+	public async Task<Result<AuthResponse>> GetTokenAsync(string email, string password,
 		CancellationToken cancellationToken = default)
 	{
 		// check user?
 		var user = await _userManager.FindByEmailAsync(email);
 		if (user is null)
-			return null;
+			return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
 
 		// check password
 		var isValidPassword = await _userManager.CheckPasswordAsync(user, password);
 		if (!isValidPassword) 
-			return null;
+			return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
 
 		// generate token
 		var (token, expiresIn) = _jwtProvider.GenerateToken(user);
@@ -70,29 +73,32 @@ public class AuthService(UserManager<ApplicationUser> userManager,IJwtProvider j
 		});
 		await _userManager.UpdateAsync(user);
 
-		return new AuthResponse(user.Id,user.Email!,user.FirstName,user.LastName,token,expiresIn,refreshToken,refreshTokenExpiration);
+		var response = new AuthResponse(user.Id, user.Email!, user.FirstName, user.LastName, token, expiresIn, refreshToken, refreshTokenExpiration);
+		
+		return Result.Success(response);
 	}
 
-	public async Task<bool> RevokeRefreshTokenAsync(string token, string refreshToken, CancellationToken cancellationToken = default)
+	public async Task<Result> RevokeRefreshTokenAsync(string token, string refreshToken, CancellationToken cancellationToken = default)
 	{
 		var userId = _jwtProvider.ValidateToken(token);
 		if (userId == null)
-			return false;
+			return Result.Failure<ApplicationUser>(UserError.InvalidCredentials);
 
 		var user = await _userManager.FindByIdAsync(userId);
 
 		if (user == null)
-			return false;
+			return Result.Failure<ApplicationUser>(UserError.InvalidCredentials);
 
 		var userRefreshToken = user.RefreshTokens.SingleOrDefault(x => x.Token == refreshToken && x.IsActive);
 		if (userRefreshToken == null)
-			return false;
+			return Result.Failure<ApplicationUser>(UserError.InvalidCredentials);
+			
 		userRefreshToken.RevokedOn = DateTime.UtcNow;
 		await _userManager.UpdateAsync(user);
 
 		userRefreshToken.RevokedOn = DateTime.UtcNow;
 
-		return true;
+		return Result.Success(userRefreshToken);
 	}
 
 	private string GenerateRefreshToken()

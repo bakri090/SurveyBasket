@@ -23,6 +23,16 @@ public static class DependencyInjection
 
 		services.AddDbContext<ApplicationDbContext>(options =>
 			options.UseSqlServer(connectionString));
+		var allowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>();
+
+		services.AddCors(op =>
+		op.AddDefaultPolicy(builder =>
+			builder
+				.AllowAnyHeader()
+				.AllowAnyMethod()
+				.WithOrigins(allowedOrigins!)
+			)
+		);
 
 		services
 			.AddSwaggerServices()
@@ -31,7 +41,10 @@ public static class DependencyInjection
 
 		services.AddScoped<IAuthService, AuthService>();
 		services.AddScoped<IPollService, PollService>();
+		services.AddScoped<IQuestionService, QuestionService>();
 
+		services.AddExceptionHandler<GlobalExceptionHandler>();
+		services.AddProblemDetails();
 		return services;
 	}
 
