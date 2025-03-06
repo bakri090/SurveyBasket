@@ -10,6 +10,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<Answer> Answers { get; set; }
 	public DbSet<Poll> Polls { get; set; }
 	public DbSet<Question> Questions { get; set; }
+	public DbSet<Vote> Votes { get; set; }
+	public DbSet<VoteAnswer> VoteAnswers { get; set; }
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
@@ -31,7 +33,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
 		foreach (var entityEntry in entries)
 		{
-			var currentUserId = _httpContext.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+			var currentUserId = _httpContext.HttpContext?.User.GetUserId()!;
 			if(entityEntry.State == EntityState.Added)
 			{
 				entityEntry.Property(x => x.CreatedById).CurrentValue = currentUserId;

@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
+﻿ 
 namespace SurveyBasket.Api.Service
 {
     public class PollService(ApplicationDbContext db) : IPollService
@@ -20,7 +19,12 @@ namespace SurveyBasket.Api.Service
 				? Result.Success(pool.Adapt<PollResponse>())
 				: Result.Failure<PollResponse>(PollError.PollNotFound);
 		}
-
+		public async Task<IEnumerable<PollResponse>> GetCurrentAsync(CancellationToken cancellationToken = default) =>
+			await _db.Polls
+			.Where(x=> x.IsPublished && x.StartsAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow))
+			.AsNoTracking()
+			.ProjectToType<PollResponse>()
+			.ToListAsync(cancellationToken);
 		public async Task<Result<PollResponse>> AddAsync(PollRequest request, CancellationToken cancellationToken = default)
 		{
 			var isExistingTitle = await _db.Polls.AnyAsync(x => x.Title == request.Title, cancellationToken);
