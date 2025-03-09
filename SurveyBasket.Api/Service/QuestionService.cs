@@ -1,20 +1,24 @@
-﻿using SurveyBasket.Api.Contracts.Answers;
+﻿using Microsoft.Extensions.Caching.Memory;
+using SurveyBasket.Api.Contracts.Answers;
 using SurveyBasket.Api.Contracts.Question;
 
 namespace SurveyBasket.Api.Service;
 
-public class QuestionService(ApplicationDbContext db) : IQuestionService
+public class QuestionService(ApplicationDbContext db,ICacheService cacheService,ILogger<QuestionService> logger) : IQuestionService
 {
 	private readonly ApplicationDbContext _db = db;
+	private readonly ICacheService _cacheService = cacheService;
+	private readonly ILogger<QuestionService> _logger = logger;
 
-	public async Task<Result<IEnumerable<QuestionResponse>>> GetAllAsync(int polId, CancellationToken cancellationToken = default)
+	private const string _cachePrefix = "availableQuestions"; 
+	public async Task<Result<IEnumerable<QuestionResponse>>> GetAllAsync(int pollId, CancellationToken cancellationToken = default)
 	{
-		var pollIsExists =await _db.Polls.AnyAsync(x => x.Id == polId, cancellationToken: cancellationToken);
+		var pollIsExists =await _db.Polls.AnyAsync(x => x.Id == pollId, cancellationToken: cancellationToken);
 		if(!pollIsExists)
 			return Result.Failure<IEnumerable<QuestionResponse>>(PollError.PollNotFound);
 		
 		var questions = await _db.Questions
-			.Where(x => x.PollId == polId)
+			.Where(x => x.PollId == pollId)
 			.Include(x => x.Answers)
 			// لو شغال على مشروع كبير فالطريقه دي افضل عشان بتعمل اختيار للاعمده من قاعده البيانات اول وترجعه
 			//.Select(q => new QuestionResponse(
@@ -29,33 +33,58 @@ public class QuestionService(ApplicationDbContext db) : IQuestionService
 
 		return Result.Success<IEnumerable<QuestionResponse>>(questions);
 	}
-	public async Task<Result<IEnumerable<QuestionResponse>>> GetAvailableAsync(int polId, string userId,
+	public async Task<Result<IEnumerable<QuestionResponse>>> GetAvailableAsync(int pollId, string userId,
 		CancellationToken cancellationToken = default)
 	{
-		var hasVote = await _db.Votes.AnyAsync(x => x.PollId == polId && x.UserId == userId, cancellationToken);
+		//var hasVote = await _db.Votes.AnyAsync(x => x.PollId == pollId && x.UserId == userId, cancellationToken);
 		
-		if (hasVote)
-			return Result.Failure<IEnumerable<QuestionResponse>>(VoteError.DuplicatedVote);
+		//if (hasVote)
+		//	return Result.Failure<IEnumerable<QuestionResponse>>(VoteError.DuplicatedVote);
 
-		var pollIsExist = await _db.Polls.AnyAsync( x => x.Id == polId && x.IsPublished && x.StartsAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow) ,cancellationToken);
+		//var pollIsExist = await _db.Polls.AnyAsync( x => x.Id == pollId && x.IsPublished && x.StartsAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow) ,cancellationToken);
 
-		if(!pollIsExist)
-		return Result.Failure<IEnumerable<QuestionResponse>>(PollError.PollNotFound);
+		//if(!pollIsExist)
+		//return Result.Failure<IEnumerable<QuestionResponse>>(PollError.PollNotFound);
 
-		var questions = await _db.Questions.Where(x => x.PollId == polId && x.IsActive)
-			.Include(x => x.Answers)
-			.Select(q => new QuestionResponse(
-				q.Id,
-				q.Content,
-				q.Answers.Where(a => a.IsActive).Select(x => new AnswerResponse(x.Id,x.Content))))
-			.AsNoTracking()
-			.ToListAsync(cancellationToken);
+		var cacheKey = $"{_cachePrefix}-{pollId}";
+		var cacheQuestions = await _cacheService.GetAsync<IEnumerable<QuestionResponse>>(cacheKey,cancellationToken);
+		IEnumerable<QuestionResponse> questions = [];
+
+		if(cacheQuestions is null)
+		{
+			_logger.LogInformation("Select question from database");
+			questions = await _db.Questions.Where(x => x.PollId == pollId && x.IsActive)
+				.Include(x => x.Answers)
+				.Select(q => new QuestionResponse(
+					q.Id,
+					q.Content,
+					q.Answers.Where(a => a.IsActive).Select(x => new AnswerResponse(x.Id, x.Content))
+					))
+					.AsNoTracking()
+					.ToListAsync(cancellationToken);
+			await _cacheService.SetAsync(cacheKey, questions,cancellationToken);
+		}
+		else
+		{
+			_logger.LogInformation("Select question from cache");
+
+			questions = cacheQuestions;
+		}
+		//var questions = await _db.Questions.Where(x => x.PollId == pollId && x.IsActive)
+		//	.Include(x => x.Answers)
+		//	.Select(q => new QuestionResponse(
+		//		q.Id,
+		//		q.Content,
+		//		q.Answers.Where(a => a.IsActive).Select(x => new AnswerResponse(x.Id, x.Content))))
+		//	.AsNoTracking()
+		//	.ToListAsync(cancellationToken);
+
 		return Result.Success<IEnumerable<QuestionResponse>>(questions);
 	}
-	public async Task<Result<QuestionResponse>> GetAsync(int polId, int id, CancellationToken cancellationToken = default)
+	public async Task<Result<QuestionResponse>> GetAsync(int pollId, int id, CancellationToken cancellationToken = default)
 	{
 		var question = await _db.Questions
-			.Where(x => x.PollId == polId && x.Id == id)
+			.Where(x => x.PollId == pollId && x.Id == id)
 			.Include(x => x.Answers)
 			.Select(x => new QuestionResponse
 			(x.Id,
@@ -68,6 +97,7 @@ public class QuestionService(ApplicationDbContext db) : IQuestionService
 		if(question is null)
 			return Result.Failure<QuestionResponse>(QuestionError.QuestionNotFound);
 
+		await _cacheService.RemoveAsync($"{_cachePrefix}-{pollId}", cancellationToken);
 		return Result.Success<QuestionResponse>(question);
 	}
 	public async Task<Result<QuestionResponse>> AddAsync(int pollId, QuestionRequest request,
@@ -91,6 +121,7 @@ public class QuestionService(ApplicationDbContext db) : IQuestionService
 		await _db.AddAsync(question);
 		await _db.SaveChangesAsync(cancellationToken);
 
+		await _cacheService.RemoveAsync($"{_cachePrefix}-{pollId}", cancellationToken);
 		return Result.Success(question.Adapt<QuestionResponse>());
 	}
 	public async Task<Result> UpdateAsync(int pollId, int id,QuestionRequest request, CancellationToken cancellationToken = default)
@@ -126,6 +157,7 @@ public class QuestionService(ApplicationDbContext db) : IQuestionService
 			answer.IsActive = request.Answers.Contains(answer.Content);
 		});
 		await _db.SaveChangesAsync(cancellationToken);
+		await _cacheService.RemoveAsync($"{_cachePrefix}-{pollId}", cancellationToken);
 		return Result.Success();
 	}
 	public async Task<Result> ToggleStatusAsync(int pollId, int id, CancellationToken cancellationToken = default)
@@ -135,9 +167,9 @@ public class QuestionService(ApplicationDbContext db) : IQuestionService
 			return Result.Failure(QuestionError.QuestionNotFound);
 
 		question.IsActive = !question.IsActive;
-
 		await _db.SaveChangesAsync(cancellationToken);
 
+		await _cacheService.RemoveAsync($"{_cachePrefix}-{pollId}", cancellationToken);
 		return Result.Success();	
 	}
 

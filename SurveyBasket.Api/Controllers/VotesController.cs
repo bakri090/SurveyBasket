@@ -4,16 +4,17 @@ namespace SurveyBasket.Api.Controllers;
 
 [Route("api/polls/{pollId}/vote")]
 [ApiController]
-[Authorize]
+//[Authorize]
 public class VotesController(IQuestionService questionService,IVoteService voteService) : ControllerBase
 {
 	private readonly IQuestionService _questionService = questionService;
 	private readonly IVoteService _voteService = voteService;
 
 	[HttpGet("")]
+	[ResponseCache(Duration = 60 )]
 	public async Task<IActionResult> Start([FromRoute] int pollId,CancellationToken cancellationToken)
 	{
-		var userId = User.GetUserId();
+		var userId = "8e58cdf2-e1a1-47f7-a6cb-67f0b0806f54";//User.GetUserId();
 		var result = await _questionService.GetAvailableAsync(pollId, userId!, cancellationToken);
 
 		return result.IsSuccess ? Ok(result.Value) : result.ToProblem();

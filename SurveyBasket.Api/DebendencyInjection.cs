@@ -16,7 +16,9 @@ public static class DependencyInjection
 	{
 		services.AddControllers();
 
+
 		services.AddAuthConfig(configuration);
+
 
 		var connectionString = configuration.GetConnectionString("DefCon") ??
 			throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -43,6 +45,9 @@ public static class DependencyInjection
 		services.AddScoped<IPollService, PollService>();
 		services.AddScoped<IQuestionService, QuestionService>();
 		services.AddScoped<IVoteService, VoteService>();
+		services.AddScoped<IResultService, ResultService>();
+
+		services.AddScoped<ICacheService, CacheService>();
 
 		services.AddExceptionHandler<GlobalExceptionHandler>();
 		services.AddProblemDetails();
