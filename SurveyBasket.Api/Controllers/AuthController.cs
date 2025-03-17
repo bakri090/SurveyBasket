@@ -13,7 +13,7 @@ public class AuthController(IAuthService authService,ILogger<AuthController> log
 	private readonly ILogger<AuthController> _logger = logger;
 
 	[HttpPost("")]
-	public async Task<IActionResult> LoginAsync([FromBody] LoginRequest loginRequest,CancellationToken cancellationToken)
+	public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest,CancellationToken cancellationToken)
 	{
 		_logger.LogInformation("Logging with email: {email} and password : {password}",loginRequest.Email,loginRequest.Password);
 
@@ -24,17 +24,39 @@ public class AuthController(IAuthService authService,ILogger<AuthController> log
 		:authResult.ToProblem();
 	}
 	[HttpPost("refresh")]
-	public async Task<IActionResult> RefreshAsync([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+	public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
 		var authResponse = await _authService.GetRefreshTokenAsync(request.token, request.refreshToken, cancellationToken);
 
 		return authResponse.IsFailure ? authResponse.ToProblem() : Ok(authResponse.Value);
 	}
+
 	[HttpPut("revoke-refresh-token")]
-	public async Task<IActionResult> RevokeRefreshAsync( [FromBody]RefreshTokenRequest request, CancellationToken cancellationToken)
+	public async Task<IActionResult> RevokeRefresh( [FromBody]RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
 		var result = await _authService.RevokeRefreshTokenAsync(request.token, request.refreshToken, cancellationToken);
 
 		return result.IsSuccess ? Ok(): result.ToProblem();
+	}
+	[HttpPost("register")]
+	public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+	{
+		var result = await _authService.RegisterAsync(request, cancellationToken);
+
+		return result.IsFailure ? result.ToProblem() : Ok();
+	}
+	[HttpPost("confirm-email")]
+	public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request)
+	{
+		var result = await _authService.ConfirmEmailAsync(request);
+
+		return result.IsFailure ? result.ToProblem() : Ok();
+	}
+	[HttpPost("resend-confirm-email")]
+	public async Task<IActionResult> ResendConfirmEmail([FromBody] ResendConfirmationEmailRequest request)
+	{
+		var result = await _authService.ResendConfirmationEmailAsync(request);
+
+		return result.IsFailure ? result.ToProblem() : Ok();
 	}
 }
