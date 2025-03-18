@@ -1,11 +1,15 @@
-﻿ 
+﻿
+using Hangfire;
+using SurveyBasket.Api.Services;
+
 namespace SurveyBasket.Api.Service
 {
-    public class PollService(ApplicationDbContext db) : IPollService
+    public class PollService(ApplicationDbContext db, INotificationService notificationService) : IPollService
     {
         private readonly ApplicationDbContext _db = db;
-       
-        public async Task<IEnumerable<Result<PollResponse>>> GetAllAsync(CancellationToken cancellationToken = default)
+		private readonly INotificationService _notificationService = notificationService;
+
+		public async Task<IEnumerable<Result<PollResponse>>> GetAllAsync(CancellationToken cancellationToken = default)
 		{
 			var polls = await _db.Polls.AsNoTracking().ToListAsync(cancellationToken);
 			var pollsResponse = polls.Select(x => Result.Success(x.Adapt<PollResponse>()));
@@ -84,6 +88,8 @@ namespace SurveyBasket.Api.Service
 
 			await _db.SaveChangesAsync(cancellationToken);
 
+			if(poll.IsPublished && poll.StartsAt == DateOnly.FromDateTime(DateTime.UtcNow))
+				BackgroundJob.Enqueue(() => _notificationService.SendNewPollsNotification(id));
 			return Result.Success();
 		}
 

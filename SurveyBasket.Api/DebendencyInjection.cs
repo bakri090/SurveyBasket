@@ -8,6 +8,9 @@ using System.Reflection;
 using System.Text;
 using FluentValidation.AspNetCore;
 using MapsterMapper;
+using Hangfire;
+using SurveyBasket.Api.Services;
+
 
 namespace SurveyBasket.Api;
 
@@ -50,10 +53,12 @@ public static class DependencyInjection
 		services.AddScoped<IVoteService, VoteService>();
 		services.AddScoped<IResultService, ResultService>();
 		services.AddScoped<ICacheService, CacheService>();
+		services.AddScoped<INotificationService, NotificationService>();
 
 		services.AddExceptionHandler<GlobalExceptionHandler>();
 		services.AddProblemDetails();
 		services.AddHttpContextAccessor();
+		services.AddBackgroundJobConfig(configuration);
 
 		services.Configure<MailSettings>(configuration.GetSection(nameof(MailSettings)));
 
@@ -132,6 +137,21 @@ public static class DependencyInjection
 			options.SignIn.RequireConfirmedEmail = true;
 			options.User.RequireUniqueEmail = true;
 		});
+		return services;
+	}
+	private static IServiceCollection AddBackgroundJobConfig(this IServiceCollection services,
+		IConfiguration configuration)
+	{
+		// Add Hangfire services.
+		services.AddHangfire(config => config
+			.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+			.UseSimpleAssemblyNameTypeSerializer()
+			.UseRecommendedSerializerSettings()
+			.UseSqlServerStorage(configuration.GetConnectionString("HangfireConnection")));
+
+		// Add the processing server as IHostedService
+		services.AddHangfireServer();
+
 		return services;
 	}
 }
