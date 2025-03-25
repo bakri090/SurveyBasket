@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Reflection;
 using System.Security.Claims;
 
 namespace SurveyBasket.Api.Persistence;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options,IHttpContextAccessor httpContext) : IdentityDbContext<ApplicationUser>(options)
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options,IHttpContextAccessor httpContext) : IdentityDbContext<ApplicationUser, ApplicationRole, string>(options)
 {
 	private readonly IHttpContextAccessor _httpContext = httpContext;
 	public DbSet<Answer> Answers { get; set; }
@@ -12,6 +13,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<Question> Questions { get; set; }
 	public DbSet<Vote> Votes { get; set; }
 	public DbSet<VoteAnswer> VoteAnswers { get; set; }
+	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+	{
+		optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+		base.OnConfiguring(optionsBuilder);
+	}
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());

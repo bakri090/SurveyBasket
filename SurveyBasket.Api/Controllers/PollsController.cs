@@ -1,15 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization;
-
-namespace SurveyBasket.Api.Controllers;
+﻿namespace SurveyBasket.Api.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class PollsController(IPollService poll) : ControllerBase
 {
 	private readonly IPollService _pollService = poll;
 
 	[HttpGet("")]
+    [HasPermission(Permissions.ReadPolls)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
 	{
         var polls = await _pollService.GetAllAsync(cancellationToken);
@@ -18,19 +16,22 @@ public class PollsController(IPollService poll) : ControllerBase
         return Ok(results) ;    
     }
 	[HttpGet("current")]
+    [Authorize(Roles = DefaultRoles.Member)]
 	public async Task<IActionResult> GetCurrent(CancellationToken cancellationToken)
 	{
 		return Ok(await _pollService.GetCurrentAsync(cancellationToken));
 	}
 
 	[HttpGet("{id}")]
-    public async Task<IActionResult> Get([FromRoute]int id, CancellationToken cancellationToken)
+	[HasPermission(Permissions.ReadPolls)]
+	public async Task<IActionResult> Get([FromRoute]int id, CancellationToken cancellationToken)
     {
         var poll = await _pollService.GetAsync(id,cancellationToken);
         
         return poll.IsSuccess ? Ok(poll.Value) : poll.ToProblem();
     }
 	[HttpPost("")]
+	[HasPermission(Permissions.AddPolls)]
 	public async Task<IActionResult> Add([FromBody] PollRequest request,
 		CancellationToken cancellationToken)
 	{
@@ -40,7 +41,8 @@ public class PollsController(IPollService poll) : ControllerBase
 	}
 
 	[HttpPut("{id}")]
-    public async Task<IActionResult> Update([FromRoute] int id, [FromBody] PollRequest request,CancellationToken cancellationToken)
+	[HasPermission(Permissions.UpdatePolls)]
+	public async Task<IActionResult> Update([FromRoute] int id, [FromBody] PollRequest request,CancellationToken cancellationToken)
     {
         var result =await _pollService.UpdateAsync(id, request ,cancellationToken);
 
@@ -48,14 +50,15 @@ public class PollsController(IPollService poll) : ControllerBase
     }
 
     [HttpDelete("{id}")]
-
-    public async Task<IActionResult> Delete([FromRoute] int id,CancellationToken cancellationToken )
+    [HasPermission(Permissions.DeletePolls)]
+	public async Task<IActionResult> Delete([FromRoute] int id,CancellationToken cancellationToken )
     {
         var result =await _pollService.DeleteAsync(id,cancellationToken);
 
         return result.IsSuccess ? NoContent() : result.ToProblem();
 	}
     [HttpPut("{id}/togglePublish")]
+    [HasPermission(Permissions.UpdatePolls)]
     public async Task<IActionResult> TogglePublish([FromRoute] int id,CancellationToken cancellationToken)
     {
         var result = await _pollService.TogglePublishStatusAsync(id,cancellationToken);

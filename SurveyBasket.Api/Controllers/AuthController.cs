@@ -24,6 +24,7 @@ public class AuthController(IAuthService authService,ILogger<AuthController> log
 		:authResult.ToProblem();
 	}
 	[HttpPost("refresh")]
+	
 	public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
 		var authResponse = await _authService.GetRefreshTokenAsync(request.token, request.refreshToken, cancellationToken);

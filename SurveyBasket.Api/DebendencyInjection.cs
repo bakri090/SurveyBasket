@@ -96,10 +96,12 @@ public static class DependencyInjection
 	private static IServiceCollection AddAuthConfig(this IServiceCollection services,
 		IConfiguration configuration)
 	{
-		services.AddIdentity<ApplicationUser, IdentityRole>()
+		services.AddIdentity<ApplicationUser, ApplicationRole>()
 		  .AddEntityFrameworkStores<ApplicationDbContext>()
 		  .AddDefaultTokenProviders();
 
+		services.AddTransient<IAuthorizationHandler, PermissionAuthorizationHandler>();
+		services.AddTransient<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
 
 		services.AddSingleton<IJwtProvider, JwtProvider>();
 
@@ -134,7 +136,7 @@ public static class DependencyInjection
 		services.Configure<IdentityOptions>(options =>
 		{
 			options.Password.RequiredLength = 8;
-			options.SignIn.RequireConfirmedEmail = true;
+			//options.SignIn.RequireConfirmedEmail = true;
 			options.User.RequireUniqueEmail = true;
 		});
 		return services;
