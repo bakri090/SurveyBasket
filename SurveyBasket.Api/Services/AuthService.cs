@@ -32,17 +32,17 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 	{
 		var userId = _jwtProvider.ValidateToken(token);
 		if (userId == null)
-			return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
+			return Result.Failure<AuthResponse>(UserErrors.InvalidCredentials);
 
 		var user = await _userManager.FindByIdAsync(userId);
 
 		if (user == null)
-			return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
+			return Result.Failure<AuthResponse>(UserErrors.InvalidCredentials);
 
 
 		var userRefreshToken = user.RefreshTokens.SingleOrDefault(x => x.Token == refreshToken && x.IsActive);
 		if (userRefreshToken == null)
-			return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
+			return Result.Failure<AuthResponse>(UserErrors.InvalidCredentials);
 
 		userRefreshToken.RevokedOn = DateTime.UtcNow;
 
@@ -71,7 +71,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 		//var user = await _userManager.FindByEmailAsync(email);
 		//if (user is null)
 		if(await _userManager.FindByEmailAsync(email) is not { } user)	
-		return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
+		return Result.Failure<AuthResponse>(UserErrors.InvalidCredentials);
 
 		// check password
 		//var isValidPassword = await _userManager.CheckPasswordAsync(user, password);
@@ -101,7 +101,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 
 			return Result.Success(response);
 		}
-		return Result.Failure<AuthResponse>(result.IsNotAllowed ? UserError.EmailNotConfirmed : UserError.InvalidCredentials);
+		return Result.Failure<AuthResponse>(result.IsNotAllowed ? UserErrors.EmailNotConfirmed : UserErrors.InvalidCredentials);
 	}
 
 
@@ -109,16 +109,16 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 	{
 		var userId = _jwtProvider.ValidateToken(token);
 		if (userId == null)
-			return Result.Failure<ApplicationUser>(UserError.InvalidCredentials);
+			return Result.Failure<ApplicationUser>(UserErrors.InvalidCredentials);
 
 		var user = await _userManager.FindByIdAsync(userId);
 
 		if (user == null)
-			return Result.Failure<ApplicationUser>(UserError.InvalidCredentials);
+			return Result.Failure<ApplicationUser>(UserErrors.InvalidCredentials);
 
 		var userRefreshToken = user.RefreshTokens.SingleOrDefault(x => x.Token == refreshToken && x.IsActive);
 		if (userRefreshToken == null)
-			return Result.Failure<ApplicationUser>(UserError.InvalidCredentials);
+			return Result.Failure<ApplicationUser>(UserErrors.InvalidCredentials);
 			
 		userRefreshToken.RevokedOn = DateTime.UtcNow;
 		await _userManager.UpdateAsync(user);
@@ -132,7 +132,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 		var emailExists = await _userManager.Users.AnyAsync(x =>  x.Email == registerRequest.Email,cancellationToken);
 
 		if(emailExists)
-			return Result.Failure(UserError.DuplicatedEmail);	
+			return Result.Failure(UserErrors.DuplicatedEmail);	
 
 		var user = registerRequest.Adapt<ApplicationUser>();
 
@@ -157,10 +157,10 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 	public async Task<Result> ConfirmEmailAsync(ConfirmEmailRequest request)
 	{
 		if(await _userManager.FindByIdAsync(request.UserId) is not { } user)
-			return Result.Failure(UserError.InvalidCode);
+			return Result.Failure(UserErrors.InvalidCode);
 
 		if (user.EmailConfirmed)
-			return Result.Failure(UserError.DuplicatedConfirmation);
+			return Result.Failure(UserErrors.DuplicatedConfirmation);
 
 		var code = request.Code;
 
@@ -170,7 +170,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 		}
 		catch (FormatException)
 		{
-			return Result.Failure(UserError.InvalidCode);
+			return Result.Failure(UserErrors.InvalidCode);
 
 		}
 		var result = await _userManager.ConfirmEmailAsync(user, code);
@@ -191,7 +191,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 			return Result.Success();
 
 		if (user.EmailConfirmed)
-			return Result.Failure(UserError.DuplicatedConfirmation);
+			return Result.Failure(UserErrors.DuplicatedConfirmation);
 
 		var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 		code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
@@ -208,7 +208,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 			return Result.Success();
 
 		if(!user.EmailConfirmed)
-			return Result.Failure(UserError.EmailNotConfirmed);
+			return Result.Failure(UserErrors.EmailNotConfirmed);
 
 		var code = await _userManager.GeneratePasswordResetTokenAsync(user);
 		code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
@@ -223,7 +223,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 		var user = await _userManager.FindByEmailAsync(request.Email);
 
 		if (user is null || !user.EmailConfirmed)
-			return Result.Failure(UserError.InvalidCode);
+			return Result.Failure(UserErrors.InvalidCode);
 
 		IdentityResult result;
 		try

@@ -21,7 +21,7 @@ namespace SurveyBasket.Api.Service
 			var pool = await _db.Polls.FindAsync(id,cancellationToken);
 			return pool is not null 
 				? Result.Success(pool.Adapt<PollResponse>())
-				: Result.Failure<PollResponse>(PollError.PollNotFound);
+				: Result.Failure<PollResponse>(PollErrors.PollNotFound);
 		}
 		public async Task<IEnumerable<PollResponse>> GetCurrentAsync(CancellationToken cancellationToken = default) =>
 			await _db.Polls
@@ -33,7 +33,7 @@ namespace SurveyBasket.Api.Service
 		{
 			var isExistingTitle = await _db.Polls.AnyAsync(x => x.Title == request.Title, cancellationToken);
 				if (isExistingTitle)
-				return Result.Failure<PollResponse>(PollError.DuplicatedPollTitle);
+				return Result.Failure<PollResponse>(PollErrors.DuplicatedPollTitle);
 
 			var poll = request.Adapt<Poll>();
 
@@ -48,12 +48,12 @@ namespace SurveyBasket.Api.Service
 			var isExisted = await _db.Polls.AnyAsync(x => x.Title == request.Title && x.Id != id, cancellationToken);
 
 			if (isExisted)
-				return Result.Failure<PollResponse>(PollError.DuplicatedPollTitle);
+				return Result.Failure<PollResponse>(PollErrors.DuplicatedPollTitle);
 
 			var currentPoll = await _db.Polls.FindAsync(id, cancellationToken);
 
 			if (currentPoll is null)
-				return Result.Failure(PollError.PollNotFound);
+				return Result.Failure(PollErrors.PollNotFound);
 
 			currentPoll.Title = request.Title;
 			currentPoll.Summary = request.Summary;
@@ -69,7 +69,7 @@ namespace SurveyBasket.Api.Service
 			var poll = await _db.Polls.FindAsync(id, cancellationToken); 
 			
 			if (poll is null)
-				return Result.Failure(PollError.PollNotFound); 
+				return Result.Failure(PollErrors.PollNotFound); 
 
 			_db.Remove(poll);
 			
@@ -82,7 +82,7 @@ namespace SurveyBasket.Api.Service
 			var poll = await _db.Polls.FindAsync(id);
 
 			if (poll is null)
-				return Result.Failure(PollError.PollNotFound);
+				return Result.Failure(PollErrors.PollNotFound);
 
 			poll.IsPublished = !poll.IsPublished;
 

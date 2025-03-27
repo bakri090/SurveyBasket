@@ -10,6 +10,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 	private readonly IQuestionService _questionService = questionService;
 
 	[HttpGet("")]
+	[HasPermission(Permissions.ReadQuestions)]
 	public async Task<IActionResult> GetAll([FromRoute]int pollId,CancellationToken cancellationToken)
 	{
 		var result =await _questionService.GetAllAsync(pollId,cancellationToken);
@@ -18,6 +19,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 	}
 
 	[HttpGet("{id}")]
+	[HasPermission(Permissions.ReadQuestions)]
 	public async Task<IActionResult> Get([FromRoute] int pollId,[FromRoute] int id,CancellationToken cancellationToken)
 	{
 		var result = await _questionService.GetAsync(pollId, id, cancellationToken);
@@ -26,6 +28,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 	}
 
 	[HttpPost("")]
+	[HasPermission(Permissions.AddQuestions)]
 	public async Task<IActionResult> Add([FromRoute] int pollId, [FromBody] QuestionRequest request,
 		CancellationToken cancellationToken = default)
 	{
@@ -35,6 +38,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 			result.ToProblem();
 	}
 	[HttpPut("{id}")]
+	[HasPermission(Permissions.UpdateQuestions)]
 	public async Task<IActionResult> Update([FromRoute] int pollId, [FromRoute] int id, [FromBody] QuestionRequest request,
 		CancellationToken cancellationToken = default)
 	{
@@ -43,7 +47,8 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 		return result.IsSuccess ? NoContent():
 			result.ToProblem();
 	}
-	[HttpPut("{id}/toggleStatus")]
+	[HttpPut("{id}/toggle-status")]
+	[HasPermission(Permissions.UpdateQuestions)]
 	public async Task<IActionResult> TogglePublish([FromRoute] int pollId,[FromRoute] int id, CancellationToken cancellationToken)
 	{
 		var result = await _questionService.ToggleStatusAsync(pollId,id, cancellationToken);

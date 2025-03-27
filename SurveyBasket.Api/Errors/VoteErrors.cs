@@ -1,6 +1,6 @@
 ﻿namespace SurveyBasket.Api.Errors;
 
-public abstract class VoteError
+public abstract class VoteErrors
 {
 	public static readonly Error InvalidQuestions =
 		new("Vote.InvalidQuestions","Invalid Question",StatusCodes.Status400BadRequest);

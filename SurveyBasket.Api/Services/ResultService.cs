@@ -23,7 +23,7 @@ public class ResultService(ApplicationDbContext db) : IResultService
 					))
 				)).SingleOrDefaultAsync(cancellationToken);
 
-		return pollVotes is null ? Result.Failure<PollVotesResponse>(PollError.PollNotFound) : Result.Success(pollVotes);
+		return pollVotes is null ? Result.Failure<PollVotesResponse>(PollErrors.PollNotFound) : Result.Success(pollVotes);
 	}
 
 	public async Task<Result<IEnumerable<VotesPerDayResponse>>> GetVotesPerDayAsync(int pollId,
@@ -32,7 +32,7 @@ public class ResultService(ApplicationDbContext db) : IResultService
 		var pollIsExist = await _db.Polls.AnyAsync(x => x.Id == pollId, cancellationToken);
 
 		if (!pollIsExist)
-			return Result.Failure<IEnumerable<VotesPerDayResponse>>(PollError.PollNotFound);
+			return Result.Failure<IEnumerable<VotesPerDayResponse>>(PollErrors.PollNotFound);
 		
 		var votesPerDay = await _db.Votes.Where(x => x.PollId == pollId)
 			.GroupBy(x => new {Date = DateOnly.FromDateTime(x.SubmittedOn)})
@@ -50,7 +50,7 @@ public class ResultService(ApplicationDbContext db) : IResultService
 		var pollIsExist = await _db.Polls.AnyAsync(x => x.Id == pollId, cancellationToken);
 
 		if (!pollIsExist)
-			return Result.Failure<IEnumerable<VotesPerQuestionResponse>>(PollError.PollNotFound);
+			return Result.Failure<IEnumerable<VotesPerQuestionResponse>>(PollErrors.PollNotFound);
 
 		var votesPerQuestion = await _db.VoteAnswers
 			.Where(x => x.Vote.PollId == pollId)

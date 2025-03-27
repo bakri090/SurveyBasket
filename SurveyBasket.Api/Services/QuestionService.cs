@@ -15,7 +15,7 @@ public class QuestionService(ApplicationDbContext db,ICacheService cacheService,
 	{
 		var pollIsExists =await _db.Polls.AnyAsync(x => x.Id == pollId, cancellationToken: cancellationToken);
 		if(!pollIsExists)
-			return Result.Failure<IEnumerable<QuestionResponse>>(PollError.PollNotFound);
+			return Result.Failure<IEnumerable<QuestionResponse>>(PollErrors.PollNotFound);
 		
 		var questions = await _db.Questions
 			.Where(x => x.PollId == pollId)
@@ -95,7 +95,7 @@ public class QuestionService(ApplicationDbContext db,ICacheService cacheService,
 			.SingleOrDefaultAsync(cancellationToken: cancellationToken);
 		
 		if(question is null)
-			return Result.Failure<QuestionResponse>(QuestionError.QuestionNotFound);
+			return Result.Failure<QuestionResponse>(QuestionErrors.QuestionNotFound);
 
 		await _cacheService.RemoveAsync($"{_cachePrefix}-{pollId}", cancellationToken);
 		return Result.Success<QuestionResponse>(question);
@@ -106,12 +106,12 @@ public class QuestionService(ApplicationDbContext db,ICacheService cacheService,
 		var pollIsExists = await _db.Polls.AnyAsync(x => x.Id == pollId, cancellationToken);
 
 		if(!pollIsExists)
-			return Result.Failure<QuestionResponse>(PollError.PollNotFound);
+			return Result.Failure<QuestionResponse>(PollErrors.PollNotFound);
 		
 		var questionIsExists = await _db.Questions.AnyAsync(x => x.Content == request.Content && x.PollId == pollId, cancellationToken: cancellationToken);
 		
 		if(questionIsExists)
-			return Result.Failure<QuestionResponse>(QuestionError.DuplicatedQuestionContent);
+			return Result.Failure<QuestionResponse>(QuestionErrors.DuplicatedQuestionContent);
 		
 		var question = request.Adapt<Question>();
 		question.PollId = pollId;
@@ -132,13 +132,13 @@ public class QuestionService(ApplicationDbContext db,ICacheService cacheService,
 			cancellationToken: cancellationToken);
 
 		if(questionIsExists)
-			return Result.Failure(QuestionError.DuplicatedQuestionContent);
+			return Result.Failure(QuestionErrors.DuplicatedQuestionContent);
 		
 		var question = await _db.Questions.Include(x => x.Answers)
 			.SingleOrDefaultAsync(x => x.PollId == pollId && x.Id == id,cancellationToken);
 
 		if(question is null)
-			return Result.Failure(QuestionError.QuestionNotFound);
+			return Result.Failure(QuestionErrors.QuestionNotFound);
 
 		question.Content = request.Content;
 
@@ -164,7 +164,7 @@ public class QuestionService(ApplicationDbContext db,ICacheService cacheService,
 	{
 		var question = await _db.Questions.SingleOrDefaultAsync(x => x.PollId == pollId && x.Id == id, cancellationToken);
 		if( question is null )
-			return Result.Failure(QuestionError.QuestionNotFound);
+			return Result.Failure(QuestionErrors.QuestionNotFound);
 
 		question.IsActive = !question.IsActive;
 		await _db.SaveChangesAsync(cancellationToken);

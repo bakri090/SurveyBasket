@@ -1,6 +1,6 @@
 ﻿namespace SurveyBasket.Api.Errors;
 
-public static class UserError
+public static class UserErrors
 {
 	public static Error InvalidCredentials =
 		new("User.InvalidCredentials", "Invalid email/password",StatusCode:StatusCodes.Status401Unauthorized);

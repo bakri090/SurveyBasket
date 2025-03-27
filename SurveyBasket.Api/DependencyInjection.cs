@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿	using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.IdentityModel.Tokens;
@@ -55,6 +55,8 @@ public static class DependencyInjection
 		services.AddScoped<ICacheService, CacheService>();
 		services.AddScoped<INotificationService, NotificationService>();
 		services.AddScoped<IUserService, UserService>();
+		services.AddScoped<IRoleService, RoleService>();
+
 		services.AddExceptionHandler<GlobalExceptionHandler>();
 		services.AddProblemDetails();
 		services.AddHttpContextAccessor();
