@@ -8,7 +8,7 @@ using System.Text;
 using FluentValidation.AspNetCore;
 using MapsterMapper;
 using Hangfire;
-using Microsoft.Extensions.DependencyInjection;
+using SurveyBasket.Api.Health;
 
 
 namespace SurveyBasket.Api;
@@ -62,6 +62,11 @@ public static class DependencyInjection
 		Services.AddBackgroundJobConfig(configuration);
 
 		Services.Configure<MailSettings>(configuration.GetSection(nameof (MailSettings)));
+
+		Services.AddHealthChecks()
+			.AddDbContextCheck<ApplicationDbContext>("database")
+			.AddHangfire(op => { op.MinimumAvailableServers = 1;})
+			.AddCheck<MailProviderHealthCheck>(name: "mail service");
 
 		return Services;
 	}
