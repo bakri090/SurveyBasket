@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
 
-namespace SurveyBasket.Api.Service;
+namespace SurveyBasket.Api.Services;
 
-public class CacheService(IDistributedCache distributedCache, ILogger<CacheService> logger) : ICacheService
+public class CacheServices(IDistributedCache distributedCache, ILogger<CacheServices> logger) : ICacheServices
 {
 	private readonly IDistributedCache _distributedCache = distributedCache;
-	private readonly ILogger<CacheService> _logger = logger;
+	private readonly ILogger<CacheServices> _logger = logger;
 
 	public async Task<T?> GetAsync<T>(string cacheKey, CancellationToken cancellationToken = default) where T : class
 	{

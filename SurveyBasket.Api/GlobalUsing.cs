@@ -10,7 +10,7 @@ global using FluentValidation;
 
 global using SurveyBasket.Api.Extensions;
 global using SurveyBasket.Api.Entities;
-global using SurveyBasket.Api.Service;
+global using SurveyBasket.Api.Services;
 global using SurveyBasket.Api.Persistence;
 global using SurveyBasket.Api.Contracts.Polls;
 global using SurveyBasket.Api.Contracts.Authentication;

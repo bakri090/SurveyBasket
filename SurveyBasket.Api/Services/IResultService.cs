@@ -1,7 +1,7 @@
 ﻿
-namespace SurveyBasket.Api.Service;
+namespace SurveyBasket.Api.Services;
 
-public interface IResultService
+public interface IResultServices
 {
 	Task<Result<PollVotesResponse>> GetPollVotesAsync(int pollId,CancellationToken cancellationToken = default);
 	Task<Result<IEnumerable<VotesPerDayResponse>>> GetVotesPerDayAsync(int pollId,CancellationToken cancellationToken = default);

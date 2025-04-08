@@ -1,31 +1,79 @@
 ﻿using Hangfire;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
 using SurveyBasket.Api.Authentication;
-using SurveyBasket.Api.Errors;
 using SurveyBasket.Api.Helpers;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace SurveyBasket.Api.Service;
+namespace SurveyBasket.Api.Services;
 
-public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager
+public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager
 	,IJwtProvider jwtProvider,
-	ILogger<AuthService> logger,
+	ILogger<AuthServices> logger,
 	IEmailSender emailSender,
 	IHttpContextAccessor httpContextAccessor,
-	ApplicationDbContext context) : IAuthService
+	ApplicationDbContext context) : IAuthServices
 {
 	private readonly UserManager<ApplicationUser> _userManager = userManager;
 	private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
 	private readonly IJwtProvider _jwtProvider = jwtProvider;
-	private readonly ILogger<AuthService> _logger = logger;
+	private readonly ILogger<AuthServices> _logger = logger;
 	private readonly IEmailSender _emailSender = emailSender;
 	private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 	private readonly ApplicationDbContext _context = context;
 
 	private readonly int _refreshTokenExpiryDays = 14;
+
+	public async Task<Result<AuthResponse>> GetTokenAsync(string email, string password,
+	CancellationToken cancellationToken = default)
+	{
+		// check user?
+		//[1]
+		//var user = await _userManager.FindByEmailAsync(email);
+		//if (user is null)
+		if (await _userManager.FindByEmailAsync(email) is not { } user)
+			return Result.Failure<AuthResponse>(UserErrors.InvalidCredentials);
+
+		if (user.IsDisabled)
+			return Result.Failure<AuthResponse>(UserErrors.DisabledUser);
+
+		// check password
+		//var isValidPassword = await _userManager.CheckPasswordAsync(user, password);
+		//if (!isValidPassword) 
+		//	return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
+
+		var result = await _signInManager.PasswordSignInAsync(user, password, false, true);
+
+		if (result.Succeeded)
+		{
+			var (userRoles, userPermissions) = await GetUserRolesAndPermissions(user, cancellationToken);
+
+			// generate token
+			var (token, expiresIn) = _jwtProvider.GenerateToken(user, userRoles, userPermissions);
+			// refresh Token
+			var refreshToken = GenerateRefreshToken();
+			var refreshTokenExpiration = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays);
+
+			user.RefreshTokens.Add(new RefreshToken
+			{
+				Token = refreshToken,
+				ExpiresOn = refreshTokenExpiration,
+			});
+			await _userManager.UpdateAsync(user);
+
+			var response = new AuthResponse(user.Id, user.Email!, user.FirstName, user.LastName, token, expiresIn, refreshToken, refreshTokenExpiration);
+
+			return Result.Success(response);
+		}
+		var error = result.IsNotAllowed
+			? UserErrors.EmailNotConfirmed
+			: result.IsLockedOut 
+			? UserErrors.LockedUser
+			: UserErrors.InvalidCredentials;
+
+		return Result.Failure<AuthResponse>(error);
+	}
 
 	public async Task<Result<AuthResponse>> GetRefreshTokenAsync(string token, string refreshToken,
 		 CancellationToken cancellationToken = default)
@@ -39,6 +87,12 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 		if (user == null)
 			return Result.Failure<AuthResponse>(UserErrors.InvalidCredentials);
 
+
+		if (user.IsDisabled)
+			return Result.Failure<AuthResponse>(UserErrors.DisabledUser);
+		
+		if (user.LockoutEnd >  DateTime.UtcNow)
+		return Result.Failure<AuthResponse>(UserErrors.LockedUser);
 
 		var userRefreshToken = user.RefreshTokens.SingleOrDefault(x => x.Token == refreshToken && x.IsActive);
 		if (userRefreshToken == null)
@@ -61,47 +115,6 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 		await _userManager.UpdateAsync(user);
 		var authResponse = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, newToken, expiresIn, newRefreshToken, refreshTokenExpiration);
 		return Result.Success(authResponse);
-	}
-
-	public async Task<Result<AuthResponse>> GetTokenAsync(string email, string password,
-		CancellationToken cancellationToken = default)
-	{
-		// check user?
-		//[1]
-		//var user = await _userManager.FindByEmailAsync(email);
-		//if (user is null)
-		if(await _userManager.FindByEmailAsync(email) is not { } user)	
-		return Result.Failure<AuthResponse>(UserErrors.InvalidCredentials);
-
-		// check password
-		//var isValidPassword = await _userManager.CheckPasswordAsync(user, password);
-		//if (!isValidPassword) 
-		//	return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
-
-		var result = await _signInManager.PasswordSignInAsync(user, password, false, false);
-
-		if (result.Succeeded)
-		{
-			var (userRoles,userPermissions) = await GetUserRolesAndPermissions(user,cancellationToken);
-
-			// generate token
-			var (token, expiresIn) = _jwtProvider.GenerateToken(user,userRoles, userPermissions);
-			// refresh Token
-			var refreshToken = GenerateRefreshToken();
-			var refreshTokenExpiration = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays);
-
-			user.RefreshTokens.Add(new RefreshToken
-			{
-				Token = refreshToken,
-				ExpiresOn = refreshTokenExpiration,
-			});
-			await _userManager.UpdateAsync(user);
-
-			var response = new AuthResponse(user.Id, user.Email!, user.FirstName, user.LastName, token, expiresIn, refreshToken, refreshTokenExpiration);
-
-			return Result.Success(response);
-		}
-		return Result.Failure<AuthResponse>(result.IsNotAllowed ? UserErrors.EmailNotConfirmed : UserErrors.InvalidCredentials);
 	}
 
 
@@ -131,7 +144,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 	{
 		var emailExists = await _userManager.Users.AnyAsync(x =>  x.Email == registerRequest.Email,cancellationToken);
 
-		if(emailExists)
+		if (emailExists)
 			return Result.Failure(UserErrors.DuplicatedEmail);	
 
 		var user = registerRequest.Adapt<ApplicationUser>();
@@ -141,6 +154,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 		if (result.Succeeded)
 		{
 			var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
 			code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
 			_logger.LogInformation("Confirmation code: {code}", code);
@@ -156,7 +170,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 	}
 	public async Task<Result> ConfirmEmailAsync(ConfirmEmailRequest request)
 	{
-		if(await _userManager.FindByIdAsync(request.UserId) is not { } user)
+		if (await _userManager.FindByIdAsync(request.UserId) is not { } user)
 			return Result.Failure(UserErrors.InvalidCode);
 
 		if (user.EmailConfirmed)
@@ -187,7 +201,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 	}
 	public async Task<Result> ResendConfirmationEmailAsync(ResendConfirmationEmailRequest request)
 	{
-		if(await _userManager.FindByEmailAsync(request.Email) is not {} user )
+		if (await _userManager.FindByEmailAsync(request.Email) is not {} user )
 			return Result.Success();
 
 		if (user.EmailConfirmed)
@@ -204,10 +218,10 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 	}
 	public async Task<Result> SendResetPasswordCodeAsync(string email)
 	{
-		if(await _userManager.FindByEmailAsync(email) is not { } user)
+		if (await _userManager.FindByEmailAsync(email) is not { } user)
 			return Result.Success();
 
-		if(!user.EmailConfirmed)
+		if (!user.EmailConfirmed)
 			return Result.Failure(UserErrors.EmailNotConfirmed);
 
 		var code = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -230,7 +244,6 @@ public class AuthService(UserManager<ApplicationUser> userManager,SignInManager<
 		{
 			var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Code));
 			result = await _userManager.ResetPasswordAsync(user, code, request.NewPassword);
-
 		}
 		catch (FormatException)
 		{

@@ -1,8 +1,8 @@
 ﻿using SurveyBasket.Api.Contracts.Votes;
 
-namespace SurveyBasket.Api.Service;
+namespace SurveyBasket.Api.Services;
 
-public class VoteService(ApplicationDbContext db) : IVoteService
+public class VoteServices(ApplicationDbContext db) : IVoteServices
 {
 	private readonly ApplicationDbContext _db = db;
 

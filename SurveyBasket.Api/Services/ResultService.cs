@@ -1,8 +1,8 @@
 ﻿
 
-namespace SurveyBasket.Api.Service;
+namespace SurveyBasket.Api.Services;
 
-public class ResultService(ApplicationDbContext db) : IResultService
+public class ResultServices(ApplicationDbContext db) : IResultServices
 {
 	private readonly ApplicationDbContext _db = db;
 

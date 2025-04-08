@@ -1,26 +1,25 @@
 ﻿using SurveyBasket.Api.Contracts.Users;
-using SurveyBasket.Api.Services;
 
 namespace SurveyBasket.Api.Controllers
 {
 	[Route("me")]
 	[ApiController]
 	[Authorize]
-	public class AccountController(IUserService userService) : ControllerBase
+	public class AccountController(IUserServices userServices) : ControllerBase
 	{
-		private readonly IUserService _userService = userService;
+		private readonly IUserServices _userServices = userServices;
 
 		[HttpGet("")]
 		public async Task<IActionResult> Info()
 		{
-			var result = await _userService.GetUserProfileAsync(User.GetUserId()!);
+			var result = await _userServices.GetUserProfileAsync(User.GetUserId()!);
 			return Ok(result.Value); 
 		}
 
 		[HttpPut("update")]
 		public async Task<IActionResult> Info([FromBody] UpdateProfileRequest request)
 		{
-			var result = await _userService.UpdateProfileAsync(User.GetUserId()!, request);
+			var result = await _userServices.UpdateProfileAsync(User.GetUserId()!, request);
 
 			return NoContent();
 		}
@@ -28,7 +27,7 @@ namespace SurveyBasket.Api.Controllers
 		[HttpPut("change-password")]
 		public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
 		{
-			var result = await _userService.ChangePasswordAsync(User.GetUserId()!, request);
+			var result = await _userServices.ChangePasswordAsync(User.GetUserId()!, request);
 
 			return result.IsSuccess ? NoContent() : result.ToProblem();
 		}

@@ -2,7 +2,7 @@
 
 namespace SurveyBasket.Api.Services;
 
-public class RoleService(RoleManager<ApplicationRole> roleManager,ApplicationDbContext db) : IRoleService
+public class RoleServices(RoleManager<ApplicationRole> roleManager,ApplicationDbContext db) : IRoleServices
 {
 	private readonly RoleManager<ApplicationRole> _roleManager = roleManager;
 	private readonly ApplicationDbContext _db = db;
@@ -18,7 +18,7 @@ public class RoleService(RoleManager<ApplicationRole> roleManager,ApplicationDbC
 
 	public async Task<Result<RoleDetailResponse>> GetAsync(string id)
 	{
-		if(await _roleManager.FindByIdAsync(id) is not { } role)
+		if (await _roleManager.FindByIdAsync(id) is not { } role)
 			return Result.Failure<RoleDetailResponse>(RoleErrors.RoleNotFound);
 
 		var permissions = await _roleManager.GetClaimsAsync(role);
@@ -31,7 +31,7 @@ public class RoleService(RoleManager<ApplicationRole> roleManager,ApplicationDbC
 	{
 		var isExist = await _roleManager.RoleExistsAsync(request.Name);
 
-		if(isExist)
+		if (isExist)
 			return Result.Failure<RoleDetailResponse>(RoleErrors.DuplicatedRole);
 		
 		var allowedPermissions = Permissions.GetAllPermissions();
@@ -47,7 +47,7 @@ public class RoleService(RoleManager<ApplicationRole> roleManager,ApplicationDbC
 
 		var result =await _roleManager.CreateAsync(role);
 
-		if(result.Succeeded)
+		if (result.Succeeded)
 		{
 			var permissions = request.Permissions
 				.Select(x => new IdentityRoleClaim<string>
@@ -76,7 +76,7 @@ public class RoleService(RoleManager<ApplicationRole> roleManager,ApplicationDbC
 		if (isExist)
 			return Result.Failure<RoleDetailResponse>(RoleErrors.DuplicatedRole);
 
-		if(await _roleManager.FindByIdAsync(id) is not { } role)
+		if (await _roleManager.FindByIdAsync(id) is not { } role)
 			return Result.Failure<RoleDetailResponse>(RoleErrors.RoleNotFound);
 
 		role.Name = request.Name;
@@ -112,7 +112,7 @@ public class RoleService(RoleManager<ApplicationRole> roleManager,ApplicationDbC
 
 	public async Task<Result> ToggleStatusAsync(string id, CancellationToken cancellationToken = default)
 	{
-		if(await _roleManager.FindByIdAsync(id) is not { } role)
+		if (await _roleManager.FindByIdAsync(id) is not { } role)
 			return Result.Failure<RoleDetailResponse>(RoleErrors.RoleNotFound);
 
 		role.IsDeleted = !role.IsDeleted;

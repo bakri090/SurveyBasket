@@ -1,15 +1,13 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.UI.Services;
 using SurveyBasket.Api.Helpers;
 
 namespace SurveyBasket.Api.Services;
 
-public class NotificationService(
+public class NotificationServices(
 	ApplicationDbContext db,
 	UserManager<ApplicationUser> userManager,
 	IHttpContextAccessor httpContextAccessor,
-	IEmailSender emailSender) : INotificationService
+	IEmailSender emailSender) : INotificationServices
 {
 	private readonly ApplicationDbContext _db = db;
 	private readonly UserManager<ApplicationUser> _userManager = userManager;

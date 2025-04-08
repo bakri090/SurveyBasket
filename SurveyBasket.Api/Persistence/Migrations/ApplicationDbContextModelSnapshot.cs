@@ -10,7 +10,7 @@ using SurveyBasket.Api.Persistence;
 
 namespace SurveyBasket.Api.Persistence.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+    [DbContext(typeof (ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
@@ -341,6 +341,9 @@ namespace SurveyBasket.Api.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("bit");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -400,11 +403,12 @@ namespace SurveyBasket.Api.Persistence.Migrations
                             Email = "admin@survey-basket.com",
                             EmailConfirmed = true,
                             FirstName = "Survey Basket",
+                            IsDisabled = false,
                             LastName = "Admin",
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@SURVEY-BASKET.COM",
                             NormalizedUserName = "ADMIN@SURVEY-BASKET.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEPdsijkJMOJH4OujRMhKI6qqgLSCS/KIkBia0lsqd+DCPONbO0qdUKSrOgo4f5rqbA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEBoyMHPhrmyFZ2gjFM0MW9i2emkbigWLQicaFDJ0n9cugZhALUW3zb7nJBRBDxMNvA==",
                             PhoneNumberConfirmed = false,
                             SecurityStamp = "F878C59C-D4F9-4A26-A5AA-08277907BFA3",
                             TwoFactorEnabled = false,

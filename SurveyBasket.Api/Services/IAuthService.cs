@@ -1,6 +1,6 @@
-﻿namespace SurveyBasket.Api.Service;
+﻿namespace SurveyBasket.Api.Services;
 
-public interface IAuthService
+public interface IAuthServices
 {
 	Task<Result<AuthResponse>> GetTokenAsync(string email, string password,CancellationToken cancellationToken = default);
 	Task<Result<AuthResponse>> GetRefreshTokenAsync(string token, string refreshToken,CancellationToken cancellationToken = default);

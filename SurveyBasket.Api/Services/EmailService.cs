@@ -4,12 +4,11 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using MimeKit;
 using SurveyBasket.Api.Settings;
 
-namespace SurveyBasket.Api.Service;
-
-public class EmailService(IOptions<MailSettings> mailSettings,ILogger<EmailService> logger) : IEmailSender
+namespace SurveyBasket.Api.Services;
+public class EmailServices(IOptions<MailSettings> mailSettings,ILogger<EmailServices> logger) : IEmailSender
 {
 	private readonly MailSettings _mailSettings = mailSettings.Value;
-	private readonly ILogger<EmailService> _logger = logger;
+	private readonly ILogger<EmailServices> _logger = logger;
 
 	public async Task SendEmailAsync(string email, string subject, string htmlMessage)
 	{

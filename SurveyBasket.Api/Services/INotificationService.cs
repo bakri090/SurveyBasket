@@ -1,6 +1,6 @@
 ﻿namespace SurveyBasket.Api.Services;
 
-public interface INotificationService
+public interface INotificationServices
 {
 	Task SendNewPollsNotification(int? pollId = null);
 }

@@ -2,7 +2,7 @@
 
 namespace SurveyBasket.Api.Services;
 
-public interface IRoleService
+public interface IRoleServices
 {
 	Task<IEnumerable<RoleResponse>> GetAllAsync(bool? includeDisabled = false,CancellationToken cancellationToken = default);
 	Task<Result<RoleDetailResponse>> GetAsync(string id);

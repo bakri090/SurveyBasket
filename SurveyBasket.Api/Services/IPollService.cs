@@ -1,6 +1,6 @@
-﻿namespace SurveyBasket.Api.Service
+﻿namespace SurveyBasket.Api.Services
 {
-	public interface IPollService
+	public interface IPollServices
 	{
 		Task<IEnumerable<Result<PollResponse>>> GetAllAsync(CancellationToken cancellationToken = default);
 		Task<IEnumerable<PollResponse>> GetCurrentAsync(CancellationToken cancellationToken = default);

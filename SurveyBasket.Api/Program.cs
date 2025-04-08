@@ -1,12 +1,13 @@
 using Hangfire;
 using HangfireBasicAuthenticationFilter;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using SurveyBasket.Api;
 using SurveyBasket.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add Servicess to the container.
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -46,9 +47,9 @@ app.UseHangfireDashboard("/jobs",
 	});
 var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
 using var scope = scopeFactory.CreateScope();
-var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+var notificationServices = scope.ServiceProvider.GetRequiredService<INotificationServices>();
 
-RecurringJob.AddOrUpdate("SendNewPollsNotification", () => notificationService.SendNewPollsNotification(null), Cron.Daily);
+RecurringJob.AddOrUpdate("SendNewPollsNotification", () => notificationServices.SendNewPollsNotification(null), Cron.Daily);
 
 app.UseCors("WithOrigin");
 

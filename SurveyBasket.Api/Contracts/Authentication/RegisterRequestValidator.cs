@@ -13,7 +13,7 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
 		RuleFor(x => x.Password)
 			.NotEmpty()
 			.Matches(RegexPatterns.Password)
-			.WithMessage("Password should be at least 8 digits and should contains lowercase, NonAlphanumeric and UpperCase");
+			.WithMessage("Password should be at least 8 digits and should contains lowerCase, NonAlphanumeric and UpperCase");
 
 		RuleFor(x => x.FirstName)
 			.NotEmpty()

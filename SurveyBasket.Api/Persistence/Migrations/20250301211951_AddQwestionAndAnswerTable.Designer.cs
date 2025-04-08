@@ -11,7 +11,7 @@ using SurveyBasket.Api.Persistence;
 
 namespace SurveyBasket.Api.Persistence.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+    [DbContext(typeof (ApplicationDbContext))]
     [Migration("20250301211951_AddQwestionAndAnswerTable")]
     partial class AddQwestionAndAnswerTable
     {

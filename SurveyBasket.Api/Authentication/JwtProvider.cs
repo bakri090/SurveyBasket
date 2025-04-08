@@ -18,8 +18,8 @@ public class JwtProvider(IOptions<JwtOptions> jwtOption) : IJwtProvider
 			new(JwtRegisteredClaimNames.GivenName,user.FirstName),
 			new(JwtRegisteredClaimNames.FamilyName,user.LastName),
 			new(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()),
-			new(nameof(roles),JsonSerializer.Serialize(roles),JsonClaimValueTypes.JsonArray),
-			new(nameof(permissions),JsonSerializer.Serialize(permissions),JsonClaimValueTypes.JsonArray),
+			new(nameof (roles),JsonSerializer.Serialize(roles),JsonClaimValueTypes.JsonArray),
+			new(nameof (permissions),JsonSerializer.Serialize(permissions),JsonClaimValueTypes.JsonArray),
 			];
 		var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOption.Key));
 		var signingCredentials = new SigningCredentials(symmetricSecurityKey,SecurityAlgorithms.HmacSha256);

@@ -1,5 +1,4 @@
-﻿	using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.IdentityModel.Tokens;
 using SurveyBasket.Api.Authentication;
@@ -9,30 +8,30 @@ using System.Text;
 using FluentValidation.AspNetCore;
 using MapsterMapper;
 using Hangfire;
-using SurveyBasket.Api.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 
 namespace SurveyBasket.Api;
 
 public static class DependencyInjection
 {
-	public static IServiceCollection AddDependencies(this IServiceCollection services,
+	public static IServiceCollection AddDependencies(this IServiceCollection Services,
 		IConfiguration configuration)
 	{
-		services.AddControllers();
+		Services.AddControllers();
 
 
-		services.AddAuthConfig(configuration);
+		Services.AddAuthConfig(configuration);
 
 
 		var connectionString = configuration.GetConnectionString("DefCon") ??
 			throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-		services.AddDbContext<ApplicationDbContext>(options =>
+		Services.AddDbContext<ApplicationDbContext>(options =>
 			options.UseSqlServer(connectionString));
 		var allowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>();
 
-		services.AddCors(op =>
+		Services.AddCors(op =>
 		op.AddDefaultPolicy(builder =>
 			builder
 				.AllowAnyHeader()
@@ -41,81 +40,81 @@ public static class DependencyInjection
 			)
 		);
 
-		services
+		Services
 			.AddSwaggerServices()
 			.AddMapsterConfig()
 			.AddFluentValidationConfig();
 
-		services.AddScoped<IAuthService, AuthService>();
-		services.AddScoped<IEmailSender, EmailService>();
-		services.AddScoped<IPollService, PollService>();
-		services.AddScoped<IQuestionService, QuestionService>();
-		services.AddScoped<IVoteService, VoteService>();
-		services.AddScoped<IResultService, ResultService>();
-		services.AddScoped<ICacheService, CacheService>();
-		services.AddScoped<INotificationService, NotificationService>();
-		services.AddScoped<IUserService, UserService>();
-		services.AddScoped<IRoleService, RoleService>();
+		Services.AddScoped<IAuthServices, AuthServices>();
+		Services.AddScoped<IEmailSender, EmailServices>();
+		Services.AddScoped<IPollServices, PollServices>();
+		Services.AddScoped<IQuestionServices, QuestionServices>();
+		Services.AddScoped<IVoteServices, VoteServices>();
+		Services.AddScoped<IResultServices, ResultServices>();
+		Services.AddScoped<ICacheServices, CacheServices>();
+		Services.AddScoped<INotificationServices, NotificationServices>();
+		Services.AddScoped<IUserServices, UserServices>();
+		Services.AddScoped<IRoleServices, RoleServices>();
 
-		services.AddExceptionHandler<GlobalExceptionHandler>();
-		services.AddProblemDetails();
-		services.AddHttpContextAccessor();
-		services.AddBackgroundJobConfig(configuration);
+		Services.AddExceptionHandler<GlobalExceptionHandler>();
+		Services.AddProblemDetails();
+		Services.AddHttpContextAccessor();
+		Services.AddBackgroundJobConfig(configuration);
 
-		services.Configure<MailSettings>(configuration.GetSection(nameof(MailSettings)));
+		Services.Configure<MailSettings>(configuration.GetSection(nameof (MailSettings)));
 
-		return services;
+		return Services;
 	}
 
-	private static IServiceCollection AddSwaggerServices(this IServiceCollection services)
+	private static IServiceCollection AddSwaggerServices(this IServiceCollection Services)
 	{
 		// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-		services.AddEndpointsApiExplorer();
-		services.AddSwaggerGen();
+		Services.AddEndpointsApiExplorer();
+		Services.AddSwaggerGen();
 
-		return services;
+		return Services;
 	}
 
-	private static IServiceCollection AddMapsterConfig(this IServiceCollection services)
+	private static IServiceCollection AddMapsterConfig(this IServiceCollection Services)
 	{
 		var mappingConfig = TypeAdapterConfig.GlobalSettings;
 		mappingConfig.Scan(Assembly.GetExecutingAssembly());
 
-		services.AddSingleton<IMapper>(new Mapper(mappingConfig));
+		Services.AddSingleton<IMapper>(new Mapper(mappingConfig));
 
-		return services;
+		return Services;
 	}
 
-	private static IServiceCollection AddFluentValidationConfig(this IServiceCollection services)
+	private static IServiceCollection AddFluentValidationConfig(this IServiceCollection Services)
 	{
-		services
+		Services
 			.AddFluentValidationAutoValidation()
 			.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
-		return services;
+		return Services;
 	}
 
-	private static IServiceCollection AddAuthConfig(this IServiceCollection services,
+	private static IServiceCollection AddAuthConfig(this IServiceCollection Services,
 		IConfiguration configuration)
 	{
-		services.AddIdentity<ApplicationUser, ApplicationRole>()
+		Services.AddIdentity<ApplicationUser, ApplicationRole>()
 		  .AddEntityFrameworkStores<ApplicationDbContext>()
 		  .AddDefaultTokenProviders();
 
-		services.AddTransient<IAuthorizationHandler, PermissionAuthorizationHandler>();
-		services.AddTransient<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
+		Services.AddTransient<IAuthorizationHandler, PermissionAuthorizationHandler>();
+		Services.AddTransient<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
 
-		services.AddSingleton<IJwtProvider, JwtProvider>();
+		Services.AddSingleton<IJwtProvider, JwtProvider>();
 
-		//services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
-		services.AddOptions<JwtOptions>()
+		//Services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+		Services.AddOptions<JwtOptions>()
 			.BindConfiguration(JwtOptions.SectionName)
 			.ValidateDataAnnotations()
 			;
 
 		var jwtSettings = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
 
-		services.AddAuthentication(options =>
+		Services.AddAuthentication(options =>
 		{
 			options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
 			options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -135,27 +134,27 @@ public static class DependencyInjection
 			};
 		});
 
-		services.Configure<IdentityOptions>(options =>
+		Services.Configure<IdentityOptions>(options =>
 		{
 			options.Password.RequiredLength = 8;
-			//options.SignIn.RequireConfirmedEmail = true;
+			 options.SignIn.RequireConfirmedEmail = true;
 			options.User.RequireUniqueEmail = true;
 		});
-		return services;
+		return Services;
 	}
-	private static IServiceCollection AddBackgroundJobConfig(this IServiceCollection services,
+	private static IServiceCollection AddBackgroundJobConfig(this IServiceCollection Services,
 		IConfiguration configuration)
 	{
-		// Add Hangfire services.
-		services.AddHangfire(config => config
+		// Add Hangfire Services.
+		Services.AddHangfire(config => config
 			.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
 			.UseSimpleAssemblyNameTypeSerializer()
 			.UseRecommendedSerializerSettings()
 			.UseSqlServerStorage(configuration.GetConnectionString("HangfireConnection")));
 
-		// Add the processing server as IHostedService
-		services.AddHangfireServer();
+		// Add the processing server as IHostedServices
+		Services.AddHangfireServer();
 
-		return services;
+		return Services;
 	}
 }

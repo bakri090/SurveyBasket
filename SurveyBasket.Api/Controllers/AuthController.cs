@@ -7,9 +7,9 @@ namespace SurveyBasket.Api.Controllers;
 
 [Route("[controller]")]
 [ApiController]
-public class AuthController(IAuthService authService,ILogger<AuthController> logger) : ControllerBase
+public class AuthController(IAuthServices authServices,ILogger<AuthController> logger) : ControllerBase
 {
-	private readonly IAuthService _authService = authService;
+	private readonly IAuthServices _authServices = authServices;
 	private readonly ILogger<AuthController> _logger = logger;
 
 	[HttpPost("")]
@@ -17,7 +17,7 @@ public class AuthController(IAuthService authService,ILogger<AuthController> log
 	{
 		_logger.LogInformation("Logging with email: {email} and password : {password}",loginRequest.Email,loginRequest.Password);
 
-		var authResult = await _authService.GetTokenAsync(loginRequest.Email, loginRequest.Password,cancellationToken);
+		var authResult = await _authServices.GetTokenAsync(loginRequest.Email, loginRequest.Password,cancellationToken);
 
 		return authResult.IsSuccess 
 		? Ok(authResult.Value)
@@ -27,7 +27,7 @@ public class AuthController(IAuthService authService,ILogger<AuthController> log
 	
 	public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
-		var authResponse = await _authService.GetRefreshTokenAsync(request.token, request.refreshToken, cancellationToken);
+		var authResponse = await _authServices.GetRefreshTokenAsync(request.token, request.refreshToken, cancellationToken);
 
 		return authResponse.IsFailure ? authResponse.ToProblem() : Ok(authResponse.Value);
 	}
@@ -35,42 +35,42 @@ public class AuthController(IAuthService authService,ILogger<AuthController> log
 	[HttpPut("revoke-refresh-token")]
 	public async Task<IActionResult> RevokeRefresh( [FromBody]RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
-		var result = await _authService.RevokeRefreshTokenAsync(request.token, request.refreshToken, cancellationToken);
+		var result = await _authServices.RevokeRefreshTokenAsync(request.token, request.refreshToken, cancellationToken);
 
 		return result.IsSuccess ? Ok(): result.ToProblem();
 	}
 	[HttpPost("register")]
 	public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
 	{
-		var result = await _authService.RegisterAsync(request, cancellationToken);
+		var result = await _authServices.RegisterAsync(request, cancellationToken);
 
 		return result.IsFailure ? result.ToProblem() : Ok();
 	}
 	[HttpPost("confirm-email")]
 	public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request)
 	{
-		var result = await _authService.ConfirmEmailAsync(request);
+		var result = await _authServices.ConfirmEmailAsync(request);
 
 		return result.IsFailure ? result.ToProblem() : Ok();
 	}
 	[HttpPost("resend-confirm-email")]
 	public async Task<IActionResult> ResendConfirmEmail([FromBody] ResendConfirmationEmailRequest request)
 	{
-		var result = await _authService.ResendConfirmationEmailAsync(request);
+		var result = await _authServices.ResendConfirmationEmailAsync(request);
 
 		return result.IsFailure ? result.ToProblem() : Ok();
 	}
 	[HttpPost("forget-password")]
 	public async Task<IActionResult> ForgetPassword([FromBody] ForgetPasswordRequest request)
 	{
-		var result = await _authService.SendResetPasswordCodeAsync(request.Email);
+		var result = await _authServices.SendResetPasswordCodeAsync(request.Email);
 
 		return result.IsFailure ? result.ToProblem() : Ok();
 	}
 	[HttpPost("reset-password")]
 	public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
 	{
-		var result = await _authService.ResetPasswordRequestAsync(request);
+		var result = await _authServices.ResetPasswordRequestAsync(request);
 
 		return result.IsFailure ? result.ToProblem() : Ok();
 	}
