@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using SurveyBasket.Api.Authentication;
 using SurveyBasket.Api.Contracts.Authentication;
@@ -7,6 +8,7 @@ namespace SurveyBasket.Api.Controllers;
 
 [Route("[controller]")]
 [ApiController]
+[EnableRateLimiting(RateLimiter.IpLimit)]
 public class AuthController(IAuthServices authServices,ILogger<AuthController> logger) : ControllerBase
 {
 	private readonly IAuthServices _authServices = authServices;
@@ -74,4 +76,5 @@ public class AuthController(IAuthServices authServices,ILogger<AuthController> l
 
 		return result.IsFailure ? result.ToProblem() : Ok();
 	}
+	
 }

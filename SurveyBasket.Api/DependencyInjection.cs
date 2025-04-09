@@ -9,29 +9,31 @@ using FluentValidation.AspNetCore;
 using MapsterMapper;
 using Hangfire;
 using SurveyBasket.Api.Health;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 
 namespace SurveyBasket.Api;
 
 public static class DependencyInjection
 {
-	public static IServiceCollection AddDependencies(this IServiceCollection Services,
+	public static IServiceCollection AddDependencies(this IServiceCollection services,
 		IConfiguration configuration)
 	{
-		Services.AddControllers();
+		services.AddControllers();
 
 
-		Services.AddAuthConfig(configuration);
+		services.AddAuthConfig(configuration);
 
 
 		var connectionString = configuration.GetConnectionString("DefCon") ??
 			throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-		Services.AddDbContext<ApplicationDbContext>(options =>
+		services.AddDbContext<ApplicationDbContext>(options =>
 			options.UseSqlServer(connectionString));
 		var allowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>();
 
-		Services.AddCors(op =>
+		services.AddCors(op =>
 		op.AddDefaultPolicy(builder =>
 			builder
 				.AllowAnyHeader()
@@ -40,86 +42,88 @@ public static class DependencyInjection
 			)
 		);
 
-		Services
-			.AddSwaggerServices()
+		services
+			.AddSwaggerservices()
 			.AddMapsterConfig()
 			.AddFluentValidationConfig();
 
-		Services.AddScoped<IAuthServices, AuthServices>();
-		Services.AddScoped<IEmailSender, EmailServices>();
-		Services.AddScoped<IPollServices, PollServices>();
-		Services.AddScoped<IQuestionServices, QuestionServices>();
-		Services.AddScoped<IVoteServices, VoteServices>();
-		Services.AddScoped<IResultServices, ResultServices>();
-		Services.AddScoped<ICacheServices, CacheServices>();
-		Services.AddScoped<INotificationServices, NotificationServices>();
-		Services.AddScoped<IUserServices, UserServices>();
-		Services.AddScoped<IRoleServices, RoleServices>();
+		services.AddScoped<IAuthServices, AuthServices>();
+		services.AddScoped<IEmailSender, EmailServices>();
+		services.AddScoped<IPollServices, PollServices>();
+		services.AddScoped<IQuestionServices, QuestionServices>();
+		services.AddScoped<IVoteServices, VoteServices>();
+		services.AddScoped<IResultServices, ResultServices>();
+		services.AddScoped<ICacheServices, CacheServices>();
+		services.AddScoped<INotificationServices, NotificationServices>();
+		services.AddScoped<IUserServices, UserServices>();
+		services.AddScoped<IRoleServices, RoleServices>();
 
-		Services.AddExceptionHandler<GlobalExceptionHandler>();
-		Services.AddProblemDetails();
-		Services.AddHttpContextAccessor();
-		Services.AddBackgroundJobConfig(configuration);
+		services.AddExceptionHandler<GlobalExceptionHandler>();
+		services.AddProblemDetails();
+		services.AddHttpContextAccessor();
+		services.AddBackgroundJobConfig(configuration);
 
-		Services.Configure<MailSettings>(configuration.GetSection(nameof (MailSettings)));
+		services.Configure<MailSettings>(configuration.GetSection(nameof (MailSettings)));
 
-		Services.AddHealthChecks()
+		services.AddHealthChecks()
 			.AddDbContextCheck<ApplicationDbContext>("database")
 			.AddHangfire(op => { op.MinimumAvailableServers = 1;})
 			.AddCheck<MailProviderHealthCheck>(name: "mail service");
 
-		return Services;
+		services.AddRateLimitConfig();
+
+				return services;
 	}
 
-	private static IServiceCollection AddSwaggerServices(this IServiceCollection Services)
+	private static IServiceCollection AddSwaggerservices(this IServiceCollection services)
 	{
 		// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-		Services.AddEndpointsApiExplorer();
-		Services.AddSwaggerGen();
+		services.AddEndpointsApiExplorer();
+		services.AddSwaggerGen();
 
-		return Services;
+		return services;
 	}
 
-	private static IServiceCollection AddMapsterConfig(this IServiceCollection Services)
+	private static IServiceCollection AddMapsterConfig(this IServiceCollection services)
 	{
 		var mappingConfig = TypeAdapterConfig.GlobalSettings;
 		mappingConfig.Scan(Assembly.GetExecutingAssembly());
 
-		Services.AddSingleton<IMapper>(new Mapper(mappingConfig));
+		services.AddSingleton<IMapper>(new Mapper(mappingConfig));
 
-		return Services;
+		return services;
 	}
 
-	private static IServiceCollection AddFluentValidationConfig(this IServiceCollection Services)
+	private static IServiceCollection AddFluentValidationConfig(this IServiceCollection services)
 	{
-		Services
+		services
 			.AddFluentValidationAutoValidation()
 			.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
-		return Services;
+		return services;
 	}
 
-	private static IServiceCollection AddAuthConfig(this IServiceCollection Services,
+	private static IServiceCollection AddAuthConfig(this IServiceCollection services,
 		IConfiguration configuration)
 	{
-		Services.AddIdentity<ApplicationUser, ApplicationRole>()
+		services.AddIdentity<ApplicationUser, ApplicationRole>()
 		  .AddEntityFrameworkStores<ApplicationDbContext>()
 		  .AddDefaultTokenProviders();
 
-		Services.AddTransient<IAuthorizationHandler, PermissionAuthorizationHandler>();
-		Services.AddTransient<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
+		services.AddTransient<IAuthorizationHandler, PermissionAuthorizationHandler>();
+		services.AddTransient<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
 
-		Services.AddSingleton<IJwtProvider, JwtProvider>();
+		services.AddSingleton<IJwtProvider, JwtProvider>();
 
-		//Services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
-		Services.AddOptions<JwtOptions>()
+		//services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+		services.AddOptions<JwtOptions>()
 			.BindConfiguration(JwtOptions.SectionName)
 			.ValidateDataAnnotations()
 			;
 
 		var jwtSettings = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
 
-		Services.AddAuthentication(options =>
+		services.AddAuthentication(options =>
 		{
 			options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
 			options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -139,27 +143,88 @@ public static class DependencyInjection
 			};
 		});
 
-		Services.Configure<IdentityOptions>(options =>
+		services.Configure<IdentityOptions>(options =>
 		{
 			options.Password.RequiredLength = 8;
 			 options.SignIn.RequireConfirmedEmail = true;
 			options.User.RequireUniqueEmail = true;
 		});
-		return Services;
+		return services;
 	}
-	private static IServiceCollection AddBackgroundJobConfig(this IServiceCollection Services,
+	private static IServiceCollection AddBackgroundJobConfig(this IServiceCollection services,
 		IConfiguration configuration)
 	{
-		// Add Hangfire Services.
-		Services.AddHangfire(config => config
+		// Add Hangfire services.
+		services.AddHangfire(config => config
 			.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
 			.UseSimpleAssemblyNameTypeSerializer()
 			.UseRecommendedSerializerSettings()
 			.UseSqlServerStorage(configuration.GetConnectionString("HangfireConnection")));
 
-		// Add the processing server as IHostedServices
-		Services.AddHangfireServer();
+		// Add the processing server as IHostedservices
+		services.AddHangfireServer();
 
-		return Services;
+		return services;
+	}
+	private static IServiceCollection AddRateLimitConfig(this IServiceCollection services)
+	{
+		services.AddRateLimiter(rateLimiterOption =>
+		{
+			rateLimiterOption.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+			rateLimiterOption.AddPolicy("ipLimit", httpContext =>
+			RateLimitPartition.GetFixedWindowLimiter(
+				partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
+				factory: _ => new FixedWindowRateLimiterOptions
+				{
+					PermitLimit = 2,
+					Window = TimeSpan.FromSeconds(20)
+				}));
+
+			rateLimiterOption.AddPolicy("userLimit", httpContext =>
+						RateLimitPartition.GetFixedWindowLimiter(
+				partitionKey: httpContext.User.GetUserId(),
+				factory: _ => new FixedWindowRateLimiterOptions
+				{
+					PermitLimit = 2,
+					Window = TimeSpan.FromSeconds(20)
+				}));
+
+			rateLimiterOption.AddConcurrencyLimiter("concurrency", options =>
+			{
+				options.PermitLimit = 2;
+				options.QueueLimit = 1;
+				options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+			});
+
+			//rateLimiterOption.AddTokenBucketLimiter("token", op =>
+			//{
+			//	op.TokenLimit = 2;
+			//	op.QueueLimit = 1;
+			//	op.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+			//	op.ReplenishmentPeriod = TimeSpan.FromSeconds(30);
+			//	op.TokensPerPeriod = 2;
+			//	op.AutoReplenishment = true;
+			//});
+
+			//rateLimiterOption.AddFixedWindowLimiter("fixed", op =>
+			//{
+			//	op.PermitLimit = 2;
+			//	op.Window = TimeSpan.FromSeconds(20);
+			//	op.QueueLimit = 1;
+			//	op.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+			//});
+
+			//rateLimiterOption.AddSlidingWindowLimiter("sliding", op =>
+			//{
+			//	op.PermitLimit = 2;
+			//	op.Window = TimeSpan.FromSeconds(20);
+			//	op.QueueLimit = 1;
+			//	op.SegmentsPerWindow = 2;
+			//	op.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+			//});
+		});
+		return services;
+
 	}
 }
