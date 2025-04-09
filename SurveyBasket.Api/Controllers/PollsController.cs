@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.RateLimiting;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace SurveyBasket.Api.Controllers;
 
 [Route("api/[controller]")]
+[ApiVersion(1)]
+[ApiVersion(2)]
 [ApiController]
-public class PollsController(IPollServices poll) : ControllerBase
+public class PollsController(IPollServices pollServices) : ControllerBase
 {
-	private readonly IPollServices _pollServices = poll;
+	private readonly IPollServices _pollServices = pollServices;
 
 	[HttpGet("")]
     [HasPermission(Permissions.ReadPolls)]
@@ -17,12 +20,23 @@ public class PollsController(IPollServices poll) : ControllerBase
 		
         return Ok(results) ;    
     }
+
+	[MapToApiVersion(1)]
 	[HttpGet("current")]
     [Authorize(Roles = DefaultRoles.Member)]
     [EnableRateLimiting(RateLimiter.UserLimit)]
-	public async Task<IActionResult> GetCurrent(CancellationToken cancellationToken)
+	public async Task<IActionResult> GetCurrentV1(CancellationToken cancellationToken)
 	{
-		return Ok(await _pollServices.GetCurrentAsync(cancellationToken));
+		return Ok(await _pollServices.GetCurrentAsyncV1(cancellationToken));
+	}
+
+	[MapToApiVersion(2)]
+	[HttpGet("current")]
+	[Authorize(Roles = DefaultRoles.Member)]
+	[EnableRateLimiting(RateLimiter.UserLimit)]
+	public async Task<IActionResult> GetCurrentV2(CancellationToken cancellationToken)
+	{
+		return Ok(await _pollServices.GetCurrentAsyncV2(cancellationToken));
 	}
 
 	[HttpGet("{id}")]

@@ -1,8 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.RateLimiting;
 using SurveyBasket.Api.Authentication;
-using SurveyBasket.Api.Contracts.Authentication;
 
 namespace SurveyBasket.Api.Controllers;
 
@@ -25,8 +22,8 @@ public class AuthController(IAuthServices authServices,ILogger<AuthController> l
 		? Ok(authResult.Value)
 		:authResult.ToProblem();
 	}
+
 	[HttpPost("refresh")]
-	
 	public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
 		var authResponse = await _authServices.GetRefreshTokenAsync(request.token, request.refreshToken, cancellationToken);

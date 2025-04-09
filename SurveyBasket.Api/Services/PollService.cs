@@ -21,12 +21,17 @@ namespace SurveyBasket.Api.Services
 				? Result.Success(pool.Adapt<PollResponse>())
 				: Result.Failure<PollResponse>(PollErrors.PollNotFound);
 		}
-		public async Task<IEnumerable<PollResponse>> GetCurrentAsync(CancellationToken cancellationToken = default) =>
-			await _db.Polls
-			.Where(x=> x.IsPublished && x.StartsAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow))
-			.AsNoTracking()
+
+		public async Task<IEnumerable<PollResponse>> GetCurrentAsyncV1(CancellationToken cancellationToken = default) =>
+			await GetPolls()
 			.ProjectToType<PollResponse>()
 			.ToListAsync(cancellationToken);
+
+		public async Task<IEnumerable<PollResponseV2>> GetCurrentAsyncV2(CancellationToken cancellationToken = default) =>
+			await GetPolls()
+			.ProjectToType<PollResponseV2>()
+			.ToListAsync(cancellationToken);
+
 		public async Task<Result<PollResponse>> AddAsync(PollRequest request, CancellationToken cancellationToken = default)
 		{
 			var isExistingTitle = await _db.Polls.AnyAsync(x => x.Title == request.Title, cancellationToken);
@@ -92,5 +97,11 @@ namespace SurveyBasket.Api.Services
 			return Result.Success();
 		}
 
+		private IQueryable<Poll> GetPolls()
+		{
+			return _db.Polls
+			.Where(x => x.IsPublished && x.StartsAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow))
+			.AsNoTracking();
+		}
 	}
 	}
