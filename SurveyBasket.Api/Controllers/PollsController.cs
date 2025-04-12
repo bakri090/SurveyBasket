@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace SurveyBasket.Api.Controllers;
 
-[Route("api/[controller]")]
-[ApiVersion(1)]
+[ApiVersion(1, Deprecated = true)]
 [ApiVersion(2)]
+[Route("api/[controller]")]
 [ApiController]
 public class PollsController(IPollServices pollServices) : ControllerBase
 {

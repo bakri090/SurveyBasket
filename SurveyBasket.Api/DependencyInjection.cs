@@ -12,6 +12,8 @@ using SurveyBasket.Api.Health;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
+using SurveyBasket.Api.OpenApiTransformer;
+using Asp.Versioning.ApiExplorer;
 
 
 namespace SurveyBasket.Api;
@@ -44,7 +46,6 @@ public static class DependencyInjection
 		);
 
 		services
-			.AddSwaggerservices()
 			.AddMapsterConfig()
 			.AddFluentValidationConfig();
 
@@ -75,9 +76,10 @@ public static class DependencyInjection
 
 		services.AddApiVersioning(options =>
 		{
-			options.DefaultApiVersion = new ApiVersion(1);
+			options.DefaultApiVersion = new ApiVersion(1.0);
 			options.AssumeDefaultVersionWhenUnspecified = true;
 			options.ReportApiVersions = true;
+
 			options.ApiVersionReader = new HeaderApiVersionReader("x-api-version");
 		}).
 		AddApiExplorer(options =>
@@ -86,18 +88,37 @@ public static class DependencyInjection
 			options.SubstituteApiVersionInUrl = true;
 		});
 
+		services.AddEndpointsApiExplorer()
+			.AddOpenApiConfig();
+
 		return services;
 	}
 
-	private static IServiceCollection AddSwaggerservices(this IServiceCollection services)
+	//private static IServiceCollection AddSwaggerservices(this IServiceCollection services)
+	//{
+	//	// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+	//	services.AddEndpointsApiExplorer();
+	//	services.AddSwaggerGen();
+
+	//	return services;
+	//}
+	private static IServiceCollection AddOpenApiConfig(this IServiceCollection services)
 	{
-		// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-		services.AddEndpointsApiExplorer();
-		services.AddSwaggerGen();
+		var serviceProvider = services.BuildServiceProvider();
+		var provider = serviceProvider.GetRequiredService<IApiVersionDescriptionProvider>();
 
+		foreach (var description in provider.ApiVersionDescriptions)
+		{
+		services.AddOpenApi(description.GroupName, options =>
+		{
+			options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+			options.AddDocumentTransformer(new ApiVersioningTransformer(description));
+		});
+			
+		}
 		return services;
-	}
 
+	}
 	private static IServiceCollection AddMapsterConfig(this IServiceCollection services)
 	{
 		var mappingConfig = TypeAdapterConfig.GlobalSettings;
