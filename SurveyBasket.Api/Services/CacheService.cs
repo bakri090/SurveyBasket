@@ -12,7 +12,7 @@ public class CacheServices(IDistributedCache distributedCache, ILogger<CacheServ
 	{
 		_logger.LogInformation("Get cache with key: {key}", cacheKey);
 
-		var cacheValue = await _distributedCache.GetStringAsync(cacheKey,cancellationToken);
+		var cacheValue = await _distributedCache.GetStringAsync(cacheKey, cancellationToken);
 		return string.IsNullOrEmpty(cacheValue) ? null : JsonSerializer.Deserialize<T>(cacheValue);
 	}
 	public async Task SetAsync<T>(string cacheKey, T value, CancellationToken cancellationToken = default) where T : class
@@ -21,7 +21,7 @@ public class CacheServices(IDistributedCache distributedCache, ILogger<CacheServ
 		await _distributedCache.SetStringAsync(cacheKey, JsonSerializer.Serialize(value), cancellationToken);
 	}
 
-	public async Task RemoveAsync(string cacheKey, CancellationToken cancellationToken = default) 
+	public async Task RemoveAsync(string cacheKey, CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Remove cache with key: {key}", cacheKey);
 		await _distributedCache.RemoveAsync(cacheKey, cancellationToken);

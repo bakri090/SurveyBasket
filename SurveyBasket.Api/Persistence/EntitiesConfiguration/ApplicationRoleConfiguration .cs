@@ -4,22 +4,22 @@ public class ApplicationRoleConfiguration : IEntityTypeConfiguration<Application
 {
 	public void Configure(EntityTypeBuilder<ApplicationRole> builder)
 	{
-		
+
 		builder.HasData([
 			new ApplicationRole
 			{
-				Id = DefaultRoles.AdminRoleId,
-				Name = DefaultRoles.Admin,
-				NormalizedName = DefaultRoles.Admin.ToUpper(),
-				ConcurrencyStamp = DefaultRoles.AdminRoleConcurrencyStamp
+				Id = DefaultRoles.Admin.RoleId,
+				Name = DefaultRoles.Admin.Name,
+				NormalizedName = DefaultRoles.Admin.Name.ToUpper(),
+				ConcurrencyStamp = DefaultRoles.Admin.RoleConcurrencyStamp
 			},
 			new ApplicationRole
 			{
-				Id = DefaultRoles.MemberRoleId,
-				Name = DefaultRoles.Member,
-				NormalizedName = DefaultRoles.Member.ToUpper(),
-				ConcurrencyStamp = DefaultRoles.MemberRoleConcurrencyStamp,
-				IsDefault = true 
+				Id = DefaultRoles.Member.RoleId,
+				Name = DefaultRoles.Member.Name,
+				NormalizedName = DefaultRoles.Member.Name.ToUpper(),
+				ConcurrencyStamp = DefaultRoles.Member.RoleConcurrencyStamp,
+				IsDefault = true
 			}
 			]);
 	}

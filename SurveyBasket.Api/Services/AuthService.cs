@@ -8,8 +8,8 @@ using System.Text;
 
 namespace SurveyBasket.Api.Services;
 
-public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager
-	,IJwtProvider jwtProvider,
+public class AuthServices(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager
+	, IJwtProvider jwtProvider,
 	ILogger<AuthServices> logger,
 	IEmailSender emailSender,
 	IHttpContextAccessor httpContextAccessor,
@@ -68,7 +68,7 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 		}
 		var error = result.IsNotAllowed
 			? UserErrors.EmailNotConfirmed
-			: result.IsLockedOut 
+			: result.IsLockedOut
 			? UserErrors.LockedUser
 			: UserErrors.InvalidCredentials;
 
@@ -90,9 +90,9 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 
 		if (user.IsDisabled)
 			return Result.Failure<AuthResponse>(UserErrors.DisabledUser);
-		
-		if (user.LockoutEnd >  DateTime.UtcNow)
-		return Result.Failure<AuthResponse>(UserErrors.LockedUser);
+
+		if (user.LockoutEnd > DateTime.UtcNow)
+			return Result.Failure<AuthResponse>(UserErrors.LockedUser);
 
 		var userRefreshToken = user.RefreshTokens.SingleOrDefault(x => x.Token == refreshToken && x.IsActive);
 		if (userRefreshToken == null)
@@ -102,7 +102,7 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 
 		var (userRoles, userPermissions) = await GetUserRolesAndPermissions(user, cancellationToken);
 
-		var (newToken, expiresIn) = _jwtProvider.GenerateToken(user, userRoles,userPermissions);
+		var (newToken, expiresIn) = _jwtProvider.GenerateToken(user, userRoles, userPermissions);
 		// refresh Token
 		var newRefreshToken = GenerateRefreshToken();
 		var refreshTokenExpiration = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays);
@@ -132,7 +132,7 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 		var userRefreshToken = user.RefreshTokens.SingleOrDefault(x => x.Token == refreshToken && x.IsActive);
 		if (userRefreshToken == null)
 			return Result.Failure<ApplicationUser>(UserErrors.InvalidCredentials);
-			
+
 		userRefreshToken.RevokedOn = DateTime.UtcNow;
 		await _userManager.UpdateAsync(user);
 
@@ -142,10 +142,10 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 	}
 	public async Task<Result> RegisterAsync(RegisterRequest registerRequest, CancellationToken cancellationToken = default)
 	{
-		var emailExists = await _userManager.Users.AnyAsync(x =>  x.Email == registerRequest.Email,cancellationToken);
+		var emailExists = await _userManager.Users.AnyAsync(x => x.Email == registerRequest.Email, cancellationToken);
 
 		if (emailExists)
-			return Result.Failure(UserErrors.DuplicatedEmail);	
+			return Result.Failure(UserErrors.DuplicatedEmail);
 
 		var user = registerRequest.Adapt<ApplicationUser>();
 
@@ -160,7 +160,7 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 			_logger.LogInformation("Confirmation code: {code}", code);
 
 			//TODO : Send email
-			await	SendConfirmationEmail(user, code);
+			await SendConfirmationEmail(user, code);
 
 			return Result.Success();
 		}
@@ -188,20 +188,20 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 
 		}
 		var result = await _userManager.ConfirmEmailAsync(user, code);
-		
+
 		if (result.Succeeded)
 		{
-			await _userManager.AddToRoleAsync(user,DefaultRoles.Member);
+			await _userManager.AddToRoleAsync(user, DefaultRoles.Member.Name);
 			return Result.Success();
-		} 
+		}
 
 		var error = result.Errors.First();
 
-		return Result.Failure(new Error(error.Code,error.Description, StatusCodes.Status400BadRequest));
+		return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status400BadRequest));
 	}
 	public async Task<Result> ResendConfirmationEmailAsync(ResendConfirmationEmailRequest request)
 	{
-		if (await _userManager.FindByEmailAsync(request.Email) is not {} user )
+		if (await _userManager.FindByEmailAsync(request.Email) is not { } user)
 			return Result.Success();
 
 		if (user.EmailConfirmed)
@@ -222,7 +222,7 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 			return Result.Success();
 
 		if (!user.EmailConfirmed)
-			return Result.Failure(UserErrors.EmailNotConfirmed);
+			return Result.Failure(UserErrors.EmailNotConfirmed with { StatusCode = 400 });
 
 		var code = await _userManager.GeneratePasswordResetTokenAsync(user);
 		code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
@@ -260,7 +260,7 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 	{
 		return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 	}
-	private async Task SendConfirmationEmail(ApplicationUser user,string code)
+	private async Task SendConfirmationEmail(ApplicationUser user, string code)
 	{
 		var origin = _httpContextAccessor.HttpContext?.Request.Headers.Origin;
 
@@ -290,7 +290,7 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 		await Task.CompletedTask;
 	}
 
-	private async Task<(IEnumerable<string> roles,IEnumerable<string> permissions)> GetUserRolesAndPermissions(ApplicationUser user,CancellationToken cancellationToken)
+	private async Task<(IEnumerable<string> roles, IEnumerable<string> permissions)> GetUserRolesAndPermissions(ApplicationUser user, CancellationToken cancellationToken)
 	{
 		var userRoles = await _userManager.GetRolesAsync(user);
 		//var userPermissions = await _context.Roles
@@ -312,5 +312,5 @@ public class AuthServices(UserManager<ApplicationUser> userManager,SignInManager
 									 .ToListAsync(cancellationToken);
 
 		return (userRoles, userPermissions);
-	}	
+	}
 }

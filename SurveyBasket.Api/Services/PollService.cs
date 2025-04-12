@@ -2,9 +2,9 @@
 
 namespace SurveyBasket.Api.Services
 {
-    public class PollServices(ApplicationDbContext db, INotificationServices notificationServices) : IPollServices
-    {
-        private readonly ApplicationDbContext _db = db;
+	public class PollServices(ApplicationDbContext db, INotificationServices notificationServices) : IPollServices
+	{
+		private readonly ApplicationDbContext _db = db;
 		private readonly INotificationServices _notificationServices = notificationServices;
 
 		public async Task<IEnumerable<Result<PollResponse>>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -13,11 +13,11 @@ namespace SurveyBasket.Api.Services
 			var pollsResponse = polls.Select(x => Result.Success(x.Adapt<PollResponse>()));
 			return pollsResponse;
 		}
-        
-        public async Task<Result<PollResponse>> GetAsync(int id,CancellationToken cancellationToken = default)
+
+		public async Task<Result<PollResponse>> GetAsync(int id, CancellationToken cancellationToken = default)
 		{
-			var pool = await _db.Polls.FindAsync(id,cancellationToken);
-			return pool is not null 
+			var pool = await _db.Polls.FindAsync(id, cancellationToken);
+			return pool is not null
 				? Result.Success(pool.Adapt<PollResponse>())
 				: Result.Failure<PollResponse>(PollErrors.PollNotFound);
 		}
@@ -35,7 +35,7 @@ namespace SurveyBasket.Api.Services
 		public async Task<Result<PollResponse>> AddAsync(PollRequest request, CancellationToken cancellationToken = default)
 		{
 			var isExistingTitle = await _db.Polls.AnyAsync(x => x.Title == request.Title, cancellationToken);
-				if (isExistingTitle)
+			if (isExistingTitle)
 				return Result.Failure<PollResponse>(PollErrors.DuplicatedPollTitle);
 
 			var poll = request.Adapt<Poll>();
@@ -46,7 +46,7 @@ namespace SurveyBasket.Api.Services
 			return Result.Success(poll.Adapt<PollResponse>());
 		}
 
-		public async Task<Result> UpdateAsync(int id, PollRequest request,CancellationToken cancellationToken = default)
+		public async Task<Result> UpdateAsync(int id, PollRequest request, CancellationToken cancellationToken = default)
 		{
 			var isExisted = await _db.Polls.AnyAsync(x => x.Title == request.Title && x.Id != id, cancellationToken);
 
@@ -58,10 +58,7 @@ namespace SurveyBasket.Api.Services
 			if (currentPoll is null)
 				return Result.Failure(PollErrors.PollNotFound);
 
-			currentPoll.Title = request.Title;
-			currentPoll.Summary = request.Summary;
-			currentPoll.StartsAt = request.StartsAt;
-			currentPoll.EndsAt = request.EndsAt;
+			currentPoll = request.Adapt(currentPoll);
 
 			await _db.SaveChangesAsync(cancellationToken);
 			return Result.Success();
@@ -69,13 +66,13 @@ namespace SurveyBasket.Api.Services
 
 		public async Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default)
 		{
-			var poll = await _db.Polls.FindAsync(id, cancellationToken); 
-			
+			var poll = await _db.Polls.FindAsync(id, cancellationToken);
+
 			if (poll is null)
-				return Result.Failure(PollErrors.PollNotFound); 
+				return Result.Failure(PollErrors.PollNotFound);
 
 			_db.Remove(poll);
-			
+
 			await _db.SaveChangesAsync(cancellationToken);
 
 			return Result.Success();
@@ -104,4 +101,4 @@ namespace SurveyBasket.Api.Services
 			.AsNoTracking();
 		}
 	}
-	}
+}

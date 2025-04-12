@@ -27,14 +27,13 @@ public class NotificationServices(
 		else
 		{
 			polls = await _db.Polls.
-				Where(x => x.IsPublished 
+				Where(x => x.IsPublished
 				&& x.StartsAt == DateOnly.FromDateTime(DateTime.UtcNow))
 				.AsNoTracking()
 				.ToListAsync();
 		}
 
-		// TODO: Select members only
-		var users = await _userManager.Users.ToListAsync();
+		var users = await _userManager.GetUsersInRoleAsync(DefaultRoles.Member.Name);
 
 		var origin = _httpContextAccessor.HttpContext?.Request.Headers.Origin;
 

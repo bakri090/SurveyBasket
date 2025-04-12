@@ -7,7 +7,7 @@ public class AddPasswordToUserRequestValidator : AbstractValidator<AddPasswordTo
 		RuleFor(x => x.Code).NotEmpty();
 
 		RuleFor(x => x.Email).NotEmpty();
-		
+
 		RuleFor(x => x.Password)
 			.NotEmpty()
 			.Matches(RegexPatterns.Password)

@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-
-namespace SurveyBasket.Api.Entities;
+﻿namespace SurveyBasket.Api.Entities;
 
 public sealed class ApplicationUser : IdentityUser
 {

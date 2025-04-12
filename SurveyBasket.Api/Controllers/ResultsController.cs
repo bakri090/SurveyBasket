@@ -13,9 +13,9 @@ public class ResultsController(IResultServices resultServices) : ControllerBase
 	private readonly IResultServices _resultServices = resultServices;
 
 	[HttpGet("row-data")]
-	public async Task<IActionResult> PollVotes([FromRoute] int pollId,CancellationToken cancellationToken)
+	public async Task<IActionResult> PollVotes([FromRoute] int pollId, CancellationToken cancellationToken)
 	{
-		var result = await _resultServices.GetPollVotesAsync(pollId,cancellationToken);
+		var result = await _resultServices.GetPollVotesAsync(pollId, cancellationToken);
 
 		return result.IsSuccess ? Ok(result.Value) : result.ToProblem();
 	}

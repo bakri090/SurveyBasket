@@ -1,5 +1,4 @@
 ﻿using Asp.Versioning.ApiExplorer;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi.Models;
 
@@ -7,7 +6,7 @@ namespace SurveyBasket.Api.OpenApiTransformer;
 
 public class ApiVersioningTransformer(ApiVersionDescription description) : IOpenApiDocumentTransformer
 {
-	public ApiVersionDescription Description  { get; } = description;
+	public ApiVersionDescription Description { get; } = description;
 
 
 	public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context,

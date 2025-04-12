@@ -1,19 +1,19 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
+using FluentValidation.AspNetCore;
+using Hangfire;
+using MapsterMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using SurveyBasket.Api.Authentication;
+using SurveyBasket.Api.Health;
+using SurveyBasket.Api.OpenApiTransformer;
 using SurveyBasket.Api.Settings;
 using System.Reflection;
 using System.Text;
-using FluentValidation.AspNetCore;
-using MapsterMapper;
-using Hangfire;
-using SurveyBasket.Api.Health;
-using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
-using Asp.Versioning;
-using SurveyBasket.Api.OpenApiTransformer;
-using Asp.Versioning.ApiExplorer;
 
 
 namespace SurveyBasket.Api;
@@ -65,11 +65,14 @@ public static class DependencyInjection
 		services.AddHttpContextAccessor();
 		services.AddBackgroundJobConfig(configuration);
 
-		services.Configure<MailSettings>(configuration.GetSection(nameof (MailSettings)));
+		services.AddOptions<MailSettings>()
+			.BindConfiguration(nameof(MailSettings))
+			.ValidateDataAnnotations()
+			.ValidateOnStart();
 
 		services.AddHealthChecks()
 			.AddDbContextCheck<ApplicationDbContext>("database")
-			.AddHangfire(op => { op.MinimumAvailableServers = 1;})
+			.AddHangfire(op => { op.MinimumAvailableServers = 1; })
 			.AddCheck<MailProviderHealthCheck>(name: "mail service");
 
 		services.AddRateLimitConfig();
@@ -109,12 +112,12 @@ public static class DependencyInjection
 
 		foreach (var description in provider.ApiVersionDescriptions)
 		{
-		services.AddOpenApi(description.GroupName, options =>
-		{
-			options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
-			options.AddDocumentTransformer(new ApiVersioningTransformer(description));
-		});
-			
+			services.AddOpenApi(description.GroupName, options =>
+			{
+				options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+				options.AddDocumentTransformer(new ApiVersioningTransformer(description));
+			});
+
 		}
 		return services;
 
@@ -181,7 +184,7 @@ public static class DependencyInjection
 		services.Configure<IdentityOptions>(options =>
 		{
 			options.Password.RequiredLength = 8;
-			 options.SignIn.RequireConfirmedEmail = true;
+			options.SignIn.RequireConfirmedEmail = true;
 			options.User.RequireUniqueEmail = true;
 		});
 		return services;

@@ -1,6 +1,6 @@
 ﻿namespace SurveyBasket.Api.Contracts.Users;
 
-public record UserResponse (
+public record UserResponse(
 	string Id,
 	string FirstName,
 	string LastName,

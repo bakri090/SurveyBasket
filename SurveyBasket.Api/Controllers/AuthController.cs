@@ -9,21 +9,21 @@ namespace SurveyBasket.Api.Controllers;
 [Route("[controller]")]
 [ApiController]
 [EnableRateLimiting(RateLimiter.IpLimit)]
-public class AuthController(IAuthServices authServices,ILogger<AuthController> logger) : ControllerBase
+public class AuthController(IAuthServices authServices, ILogger<AuthController> logger) : ControllerBase
 {
 	private readonly IAuthServices _authServices = authServices;
 	private readonly ILogger<AuthController> _logger = logger;
 
 	[HttpPost("")]
-	public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest,CancellationToken cancellationToken)
+	public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest, CancellationToken cancellationToken)
 	{
-		_logger.LogInformation("Logging with email: {email} and password : {password}",loginRequest.Email,loginRequest.Password);
+		_logger.LogInformation("Logging with email: {email} and password : {password}", loginRequest.Email, loginRequest.Password);
 
-		var authResult = await _authServices.GetTokenAsync(loginRequest.Email, loginRequest.Password,cancellationToken);
+		var authResult = await _authServices.GetTokenAsync(loginRequest.Email, loginRequest.Password, cancellationToken);
 
-		return authResult.IsSuccess 
+		return authResult.IsSuccess
 		? Ok(authResult.Value)
-		:authResult.ToProblem();
+		: authResult.ToProblem();
 	}
 
 	[HttpPost("refresh")]
@@ -35,11 +35,11 @@ public class AuthController(IAuthServices authServices,ILogger<AuthController> l
 	}
 
 	[HttpPut("revoke-refresh-token")]
-	public async Task<IActionResult> RevokeRefresh( [FromBody]RefreshTokenRequest request, CancellationToken cancellationToken)
+	public async Task<IActionResult> RevokeRefresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
 	{
 		var result = await _authServices.RevokeRefreshTokenAsync(request.token, request.refreshToken, cancellationToken);
 
-		return result.IsSuccess ? Ok(): result.ToProblem();
+		return result.IsSuccess ? Ok() : result.ToProblem();
 	}
 	[HttpPost("register")]
 	public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
@@ -76,5 +76,5 @@ public class AuthController(IAuthServices authServices,ILogger<AuthController> l
 
 		return result.IsFailure ? result.ToProblem() : Ok();
 	}
-	
+
 }

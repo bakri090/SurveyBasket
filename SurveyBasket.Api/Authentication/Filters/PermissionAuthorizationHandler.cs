@@ -13,12 +13,12 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
 		//	return;
 
 		// [2]
-		if ( context.User.Identity is not { IsAuthenticated: true } ||
+		if (context.User.Identity is not { IsAuthenticated: true } ||
 			!context.User.Claims.Any(x => x.Value == requirement.Permission && x.Type == Permissions.Type))
 			return Task.CompletedTask;
 
 		context.Succeed(requirement);
-		
+
 		return Task.CompletedTask;
 	}
 }

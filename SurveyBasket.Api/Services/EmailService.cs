@@ -5,7 +5,7 @@ using MimeKit;
 using SurveyBasket.Api.Settings;
 
 namespace SurveyBasket.Api.Services;
-public class EmailServices(IOptions<MailSettings> mailSettings,ILogger<EmailServices> logger) : IEmailSender
+public class EmailServices(IOptions<MailSettings> mailSettings, ILogger<EmailServices> logger) : IEmailSender
 {
 	private readonly MailSettings _mailSettings = mailSettings.Value;
 	private readonly ILogger<EmailServices> _logger = logger;
@@ -28,11 +28,11 @@ public class EmailServices(IOptions<MailSettings> mailSettings,ILogger<EmailServ
 
 		using var smtp = new SmtpClient();
 
-		_logger.LogInformation("SendingEmail To {email}",email);
+		_logger.LogInformation("SendingEmail To {email}", email);
 
 		smtp.Connect(_mailSettings.Host, _mailSettings.Port, SecureSocketOptions.StartTls);
 		smtp.Authenticate(_mailSettings.Mail, _mailSettings.Password);
 		await smtp.SendAsync(message);
-		smtp.Disconnect(true); 
+		smtp.Disconnect(true);
 	}
 }

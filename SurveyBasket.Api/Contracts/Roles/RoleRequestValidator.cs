@@ -6,7 +6,7 @@ public class RoleRequestValidator : AbstractValidator<RoleRequest>
 	{
 		RuleFor(x => x.Name)
 			.NotEmpty()
-			.Length(3,200);
+			.Length(3, 200);
 
 		RuleFor(x => x.Permissions)
 			.NotNull()
@@ -15,7 +15,7 @@ public class RoleRequestValidator : AbstractValidator<RoleRequest>
 		RuleFor(x => x.Permissions)
 			.Must(x => x.Distinct().Count() == x.Count)
 			.WithMessage("You cannot add duplicated permission for the same role")
-			.When(x => x.Permissions != null); 
+			.When(x => x.Permissions != null);
 
 	}
 }

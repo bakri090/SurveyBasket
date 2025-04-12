@@ -2,16 +2,16 @@
 
 namespace SurveyBasket.Api.Services;
 
-public class RoleServices(RoleManager<ApplicationRole> roleManager,ApplicationDbContext db) : IRoleServices
+public class RoleServices(RoleManager<ApplicationRole> roleManager, ApplicationDbContext db) : IRoleServices
 {
 	private readonly RoleManager<ApplicationRole> _roleManager = roleManager;
 	private readonly ApplicationDbContext _db = db;
 
-	public async Task<IEnumerable<RoleResponse>> GetAllAsync( bool? includeDisabled = false,
+	public async Task<IEnumerable<RoleResponse>> GetAllAsync(bool includeDisabled = false,
 		CancellationToken cancellationToken = default)
 	{
 		return await _roleManager.Roles
-			.Where(x => !x.IsDefault && (!x.IsDeleted || (includeDisabled.HasValue && includeDisabled.Value)))
+			.Where(x => !x.IsDefault && (!x.IsDeleted || (includeDisabled)))
 			.ProjectToType<RoleResponse>()
 			.ToListAsync(cancellationToken: cancellationToken);
 	}
@@ -23,7 +23,7 @@ public class RoleServices(RoleManager<ApplicationRole> roleManager,ApplicationDb
 
 		var permissions = await _roleManager.GetClaimsAsync(role);
 
-		var response = new RoleDetailResponse(role.Id, role.Name!, role.IsDeleted,permissions.Select(x => x.Value));
+		var response = new RoleDetailResponse(role.Id, role.Name!, role.IsDeleted, permissions.Select(x => x.Value));
 
 		return Result.Success(response);
 	}
@@ -33,7 +33,7 @@ public class RoleServices(RoleManager<ApplicationRole> roleManager,ApplicationDb
 
 		if (isExist)
 			return Result.Failure<RoleDetailResponse>(RoleErrors.DuplicatedRole);
-		
+
 		var allowedPermissions = Permissions.GetAllPermissions();
 
 		if (request.Permissions.Except(allowedPermissions).Any())
@@ -45,7 +45,7 @@ public class RoleServices(RoleManager<ApplicationRole> roleManager,ApplicationDb
 			ConcurrencyStamp = Guid.NewGuid().ToString(),
 		};
 
-		var result =await _roleManager.CreateAsync(role);
+		var result = await _roleManager.CreateAsync(role);
 
 		if (result.Succeeded)
 		{
@@ -61,16 +61,16 @@ public class RoleServices(RoleManager<ApplicationRole> roleManager,ApplicationDb
 			await _db.AddRangeAsync(permissions);
 			await _db.SaveChangesAsync();
 
-			var response = new RoleDetailResponse(role.Id, role.Name,role.IsDeleted,request.Permissions);
+			var response = new RoleDetailResponse(role.Id, role.Name, role.IsDeleted, request.Permissions);
 
 			return Result.Success(response);
 		}
 		var error = result.Errors.First();
 
-		return Result.Failure<RoleDetailResponse>(new Error(error.Code,error.Description,StatusCodes.Status400BadRequest));
+		return Result.Failure<RoleDetailResponse>(new Error(error.Code, error.Description, StatusCodes.Status400BadRequest));
 	}
 
-	public async Task<Result> UpdateAsync(string id,RoleRequest request)
+	public async Task<Result> UpdateAsync(string id, RoleRequest request)
 	{
 		var isExist = await _roleManager.Roles.AnyAsync(x => x.Name == request.Name && x.Id != id);
 		if (isExist)
@@ -96,7 +96,7 @@ public class RoleServices(RoleManager<ApplicationRole> roleManager,ApplicationDb
 					RoleId = role.Id
 				});
 			var removedPermissions = currentPermissions.Except(request.Permissions);
-			
+
 			await _db.RoleClaims.Where(x => x.RoleId == id && removedPermissions.Contains(x.ClaimValue))
 				.ExecuteDeleteAsync();
 

@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Reflection;
-using System.Security.Claims;
 
 namespace SurveyBasket.Api.Persistence;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options,IHttpContextAccessor httpContext) : IdentityDbContext<ApplicationUser, ApplicationRole, string>(options)
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor httpContext) : IdentityDbContext<ApplicationUser, ApplicationRole, string>(options)
 {
 	private readonly IHttpContextAccessor _httpContext = httpContext;
 	public DbSet<Answer> Answers { get; set; }
@@ -29,7 +27,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
 		foreach (var fk in cascade)
 			fk.DeleteBehavior = DeleteBehavior.Restrict;
-		
+
 
 		base.OnModelCreating(modelBuilder);
 	}
@@ -43,12 +41,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 			if (entityEntry.State == EntityState.Added)
 			{
 				entityEntry.Property(x => x.CreatedById).CurrentValue = currentUserId;
-			}else if (entityEntry.State == EntityState.Modified)
+			}
+			else if (entityEntry.State == EntityState.Modified)
 			{
 				entityEntry.Property(x => x.UpdatedById).CurrentValue = currentUserId;
 				entityEntry.Property(x => x.UpdatedOn).CurrentValue = DateTime.UtcNow;
 			}
-			
+
 		}
 		return base.SaveChangesAsync(cancellationToken);
 	}

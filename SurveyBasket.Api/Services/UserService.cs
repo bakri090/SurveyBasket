@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
-using SurveyBasket.Api.Abstractions;
 using SurveyBasket.Api.Contracts.Users;
 using System.Text;
 
 namespace SurveyBasket.Api.Services;
 
-public class UserServices(UserManager<ApplicationUser> userManager,IRoleServices roleServices,ApplicationDbContext db,
+public class UserServices(UserManager<ApplicationUser> userManager, IRoleServices roleServices, ApplicationDbContext db,
 	ILogger<UserServices> logger) : IUserServices
 {
 	private readonly UserManager<ApplicationUser> _userManager = userManager;
@@ -13,13 +12,13 @@ public class UserServices(UserManager<ApplicationUser> userManager,IRoleServices
 	private readonly ApplicationDbContext _db = db;
 	private readonly ILogger<UserServices> _logger = logger;
 
-	public async Task<IEnumerable<UserResponse>> GetAllAsync(CancellationToken cancellationToken =default) =>
+	public async Task<IEnumerable<UserResponse>> GetAllAsync(CancellationToken cancellationToken = default) =>
 		await (from u in _db.Users
 			   join ur in _db.UserRoles
 			   on u.Id equals ur.UserId
-			   join r in _db.Roles 
+			   join r in _db.Roles
 			   on ur.RoleId equals r.Id into roles
-			   where !roles.Any(x => x.Name == DefaultRoles.Member)
+			   where !roles.Any(x => x.Name == DefaultRoles.Member.Name)
 			   select new
 			   {
 				   u.Id,
@@ -40,9 +39,9 @@ public class UserServices(UserManager<ApplicationUser> userManager,IRoleServices
 					))
 				.ToListAsync(cancellationToken);
 
-	public async  Task<Result<UserResponse>> GetAsync(string Id)
+	public async Task<Result<UserResponse>> GetAsync(string Id)
 	{
-		if (await _userManager.FindByIdAsync(Id) is not { } user) 
+		if (await _userManager.FindByIdAsync(Id) is not { } user)
 			return Result.Failure<UserResponse>(UserErrors.UserNotFound);
 
 		var userRoles = await _userManager.GetRolesAsync(user);
@@ -55,7 +54,7 @@ public class UserServices(UserManager<ApplicationUser> userManager,IRoleServices
 
 	public async Task<Result<UserResponse>> AddAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
 	{
-		var userIsExist = await _userManager.Users.AnyAsync(x=> x.Email == request.Email,cancellationToken);
+		var userIsExist = await _userManager.Users.AnyAsync(x => x.Email == request.Email, cancellationToken);
 
 		if (userIsExist)
 			return Result.Failure<UserResponse>(UserErrors.DuplicatedEmail);
@@ -66,7 +65,7 @@ public class UserServices(UserManager<ApplicationUser> userManager,IRoleServices
 			return Result.Failure<UserResponse>(UserErrors.InvalidRoles);
 
 		var user = request.Adapt<ApplicationUser>();
-		
+
 		var result = await _userManager.CreateAsync(user);
 
 
@@ -78,7 +77,7 @@ public class UserServices(UserManager<ApplicationUser> userManager,IRoleServices
 
 			_logger.LogInformation("Confirmation code: {code}", code);
 
-			await _userManager.AddToRolesAsync(user,request.Roles);
+			await _userManager.AddToRolesAsync(user, request.Roles);
 
 			var response = (user, request.Roles).Adapt<UserResponse>();
 
@@ -95,7 +94,7 @@ public class UserServices(UserManager<ApplicationUser> userManager,IRoleServices
 		if (await _userManager.FindByEmailAsync(request.Email) is not { } user)
 			return Result.Failure(UserErrors.InvalidCode);
 
-		
+
 		var code = request.Code;
 
 		try
@@ -162,11 +161,11 @@ public class UserServices(UserManager<ApplicationUser> userManager,IRoleServices
 	public async Task<Result> ChangePasswordAsync(string userId, ChangePasswordRequest request)
 	{
 		var user = await _userManager.FindByIdAsync(userId);
-		 
+
 		var result = await _userManager.ChangePasswordAsync(user!, request.CurrentPassword, request.NewPassword);
 
 		if (result.Succeeded)
-		return Result.Success();
+			return Result.Success();
 
 		var error = result.Errors.First();
 
@@ -205,13 +204,13 @@ public class UserServices(UserManager<ApplicationUser> userManager,IRoleServices
 	{
 		if (await _userManager.FindByIdAsync(id) is not { } user)
 			return Result.Failure(UserErrors.UserNotFound);
-		
+
 		user.IsDisabled = !user.IsDisabled;
 
 		var result = await _userManager.UpdateAsync(user);
 
-		if(result.Succeeded) 
-		return Result.Success();
+		if (result.Succeeded)
+			return Result.Success();
 
 		var error = result.Errors.First();
 
@@ -223,7 +222,7 @@ public class UserServices(UserManager<ApplicationUser> userManager,IRoleServices
 		if (await _userManager.FindByIdAsync(id) is not { } user)
 			return Result.Failure(UserErrors.UserNotFound);
 
-		var result = await _userManager.SetLockoutEndDateAsync(user,null);
+		var result = await _userManager.SetLockoutEndDateAsync(user, null);
 
 		if (result.Succeeded)
 			return Result.Success();

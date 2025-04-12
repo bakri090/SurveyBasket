@@ -12,6 +12,6 @@ public class JwtOptions
 	public string Audience { get; set; } = string.Empty;
 	[Required]
 	public string Key { get; set; } = string.Empty;
-	[Range(1,int.MaxValue)]
+	[Range(1, int.MaxValue)]
 	public int ExpiryMinutes { get; set; }
 }

@@ -6,7 +6,7 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
 	{
 		RuleFor(x => x.FirstName)
 			.NotEmpty()
-			.Length(3,100);
+			.Length(3, 100);
 
 		RuleFor(x => x.LastName)
 			.NotEmpty()

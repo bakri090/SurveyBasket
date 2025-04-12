@@ -10,7 +10,7 @@ public class JwtProvider(IOptions<JwtOptions> jwtOption) : IJwtProvider
 {
 	private readonly JwtOptions _jwtOption = jwtOption.Value;
 
-	public (string token, int expiresIn) GenerateToken(ApplicationUser user,IEnumerable<string> roles,IEnumerable<string> permissions)
+	public (string token, int expiresIn) GenerateToken(ApplicationUser user, IEnumerable<string> roles, IEnumerable<string> permissions)
 	{
 		Claim[] claims = [
 			new(JwtRegisteredClaimNames.Sub,user.Id),
@@ -22,16 +22,16 @@ public class JwtProvider(IOptions<JwtOptions> jwtOption) : IJwtProvider
 			new(nameof (permissions),JsonSerializer.Serialize(permissions),JsonClaimValueTypes.JsonArray),
 			];
 		var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOption.Key));
-		var signingCredentials = new SigningCredentials(symmetricSecurityKey,SecurityAlgorithms.HmacSha256);
-		
+		var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+
 		var token = new JwtSecurityToken(
 			issuer: _jwtOption.Issuer,
 			audience: _jwtOption.Audience,
 			claims: claims,
-			expires : DateTime.UtcNow.AddMinutes(_jwtOption.ExpiryMinutes),
+			expires: DateTime.UtcNow.AddMinutes(_jwtOption.ExpiryMinutes),
 			signingCredentials: signingCredentials
 			);
-		return (token: new JwtSecurityTokenHandler().WriteToken(token), expiresIn:_jwtOption.ExpiryMinutes * 60);
+		return (token: new JwtSecurityTokenHandler().WriteToken(token), expiresIn: _jwtOption.ExpiryMinutes * 60);
 	}
 
 	public string? ValidateToken(string token)
@@ -48,13 +48,13 @@ public class JwtProvider(IOptions<JwtOptions> jwtOption) : IJwtProvider
 				ValidateIssuer = false,
 				ValidateAudience = false,
 				ClockSkew = TimeSpan.Zero,
-			},out SecurityToken validatedToken);
+			}, out SecurityToken validatedToken);
 
 			var jwtToken = (JwtSecurityToken)validatedToken;
 
 			return jwtToken.Claims.First(x => x.Type == JwtRegisteredClaimNames.Sub).Value;
 		}
-		catch 
+		catch
 		{
 
 			return null;

@@ -10,7 +10,7 @@ public class QuestionRequestValidator : AbstractValidator<QuestionRequest>
 
 		RuleFor(x => x.Answers)
 			.NotNull();
-			
+
 		RuleFor(x => x.Answers)
 			.Must(x => x.Count > 1)
 			.WithMessage("Question should has at least 2 answers")

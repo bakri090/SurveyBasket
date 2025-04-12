@@ -20,7 +20,7 @@ public class PollRequestValidator : AbstractValidator<PollRequest>
 
 		RuleFor(x => x)
 			.Must(HasValidDates)
-			.WithName(nameof (PollRequest.EndsAt))
+			.WithName(nameof(PollRequest.EndsAt))
 			.WithMessage("{PropertyName} must be greater than or equals starts date");
 	}
 	private bool HasValidDates(PollRequest pollRequest)

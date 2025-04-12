@@ -8,7 +8,7 @@ public class ResultServices(ApplicationDbContext db) : IResultServices
 
 	public async Task<Result<PollVotesResponse>> GetPollVotesAsync(int pollId, CancellationToken cancellationToken = default)
 	{
-		
+
 
 		var pollVotes = await _db.Polls.Where(x => x.Id == pollId)
 			.Select(x => new PollVotesResponse(
@@ -33,9 +33,9 @@ public class ResultServices(ApplicationDbContext db) : IResultServices
 
 		if (!pollIsExist)
 			return Result.Failure<IEnumerable<VotesPerDayResponse>>(PollErrors.PollNotFound);
-		
+
 		var votesPerDay = await _db.Votes.Where(x => x.PollId == pollId)
-			.GroupBy(x => new {Date = DateOnly.FromDateTime(x.SubmittedOn)})
+			.GroupBy(x => new { Date = DateOnly.FromDateTime(x.SubmittedOn) })
 			.Select(g => new VotesPerDayResponse(
 				g.Key.Date,
 				g.Count()

@@ -9,10 +9,10 @@ public class VoteServices(ApplicationDbContext db) : IVoteServices
 	public async Task<Result> AddAsync(int pollId, string userId, VoteRequest request, CancellationToken cancellationToken)
 	{
 		var hasVote = await _db.Votes.AnyAsync(x => x.PollId == pollId && x.UserId == userId);
-		
-		if (hasVote) 
+
+		if (hasVote)
 			return Result.Failure(VoteErrors.DuplicatedVote);
-		
+
 		var pollIsExist = await _db.Polls.AnyAsync(x => x.Id == pollId && x.IsPublished
 		&& x.StartsAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow));
 
@@ -32,7 +32,7 @@ public class VoteServices(ApplicationDbContext db) : IVoteServices
 			UserId = userId,
 			VoteAnswers = request.Answers.Adapt<IEnumerable<VoteAnswer>>().ToList(),
 		};
-		await _db.Votes.AddAsync(vote,cancellationToken);
+		await _db.Votes.AddAsync(vote, cancellationToken);
 		await _db.SaveChangesAsync(cancellationToken);
 		return Result.Success();
 	}
